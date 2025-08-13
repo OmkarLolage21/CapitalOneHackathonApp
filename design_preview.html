@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capital One Agri Advisor - Design Preview</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(to bottom, #f8f9fa, #f1f3f4);
+            min-height: 100vh;
+            color: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .phone-container {
+            width: 375px;
+            height: 812px;
+            background: linear-gradient(to bottom, #f8f9fa, #f1f3f4);
+            border-radius: 40px;
+            border: 8px solid #333;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        
+        .brand-header {
+            margin: 16px;
+            padding: 20px;
+            background: linear-gradient(135deg, #40916c, #2d6a4f);
+            border-radius: 20px;
+            color: white;
+            box-shadow: 0 8px 24px rgba(45,106,79,0.15);
+        }
+        
+        .brand-header-content {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+        }
+        
+        .brand-icon {
+            width: 36px;
+            height: 36px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .brand-text h1 {
+            font-size: 24px;
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 6px;
+        }
+        
+        .brand-text p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .quick-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            padding: 0 16px;
+            margin-bottom: 16px;
+        }
+        
+        .quick-action {
+            aspect-ratio: 1.25;
+            border-radius: 14px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+            transition: transform 0.2s;
+            border: 1px solid;
+        }
+        
+        .quick-action:hover { transform: translateY(-2px); }
+        
+        .quick-action:nth-child(1) { 
+            background: linear-gradient(135deg, rgba(20,184,166,0.16), #f8f9fa); 
+            border-color: rgba(20,184,166,0.25); 
+        }
+        .quick-action:nth-child(2) { 
+            background: linear-gradient(135deg, rgba(245,158,11,0.16), #f8f9fa); 
+            border-color: rgba(245,158,11,0.25); 
+        }
+        .quick-action:nth-child(3) { 
+            background: linear-gradient(135deg, rgba(14,165,233,0.16), #f8f9fa); 
+            border-color: rgba(14,165,233,0.25); 
+        }
+        .quick-action:nth-child(4) { 
+            background: linear-gradient(135deg, rgba(132,204,22,0.16), #f8f9fa); 
+            border-color: rgba(132,204,22,0.25); 
+        }
+        
+        .action-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            margin-bottom: auto;
+        }
+        
+        .quick-action:nth-child(1) .action-icon { background: #14b8a6; }
+        .quick-action:nth-child(2) .action-icon { background: #f59e0b; }
+        .quick-action:nth-child(3) .action-icon { background: #0ea5e9; }
+        .quick-action:nth-child(4) .action-icon { background: #84cc16; }
+        
+        .action-label {
+            font-weight: 700;
+            font-size: 16px;
+            color: #1a1a1a;
+        }
+        
+        .cards-section {
+            padding: 0 16px;
+        }
+        
+        .card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .card-icon {
+            color: #2d6a4f;
+            font-size: 20px;
+        }
+        
+        .card-title {
+            font-weight: 700;
+            font-size: 18px;
+        }
+        
+        .advisory-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .advisory-pill {
+            padding: 8px 12px;
+            border-radius: 14px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid;
+        }
+        
+        .advisory-pill.blue { 
+            background: rgba(14,165,233,0.1); 
+            border-color: rgba(14,165,233,0.25); 
+            color: #0ea5e9; 
+        }
+        .advisory-pill.red { 
+            background: rgba(239,68,68,0.1); 
+            border-color: rgba(239,68,68,0.25); 
+            color: #ef4444; 
+        }
+        .advisory-pill.yellow { 
+            background: rgba(245,158,11,0.1); 
+            border-color: rgba(245,158,11,0.25); 
+            color: #f59e0b; 
+        }
+        
+        .bottom-nav {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            right: 12px;
+            height: 64px;
+            background: white;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px;
+            border-radius: 12px;
+            min-width: 50px;
+        }
+        
+        .nav-item.active {
+            background: rgba(45,106,79,0.1);
+            color: #2d6a4f;
+        }
+        
+        .nav-item:not(.active) {
+            color: #6b7280;
+        }
+        
+        .nav-icon {
+            font-size: 20px;
+        }
+        
+        .nav-label {
+            font-size: 10px;
+            font-weight: 600;
+        }
+        
+        .title {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 24px;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div style="max-width: 800px;">
+        <h1 class="title">Capital One Agri Advisor - Visual Design Overhaul</h1>
+        
+        <div class="phone-container">
+            <!-- Brand Header -->
+            <div class="brand-header">
+                <div class="brand-header-content">
+                    <div class="brand-icon">🌱</div>
+                    <div class="brand-text">
+                        <h1>Hello, Farmer!</h1>
+                        <p>Here's what matters today in your farm.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <div class="quick-action">
+                    <div class="action-icon">💬</div>
+                    <div class="action-label">Ask a Question</div>
+                </div>
+                <div class="quick-action">
+                    <div class="action-icon">₹</div>
+                    <div class="action-label">Market Prices</div>
+                </div>
+                <div class="quick-action">
+                    <div class="action-icon">☀️</div>
+                    <div class="action-label">Today's Weather</div>
+                </div>
+                <div class="quick-action">
+                    <div class="action-icon">🏛️</div>
+                    <div class="action-label">Schemes</div>
+                </div>
+            </div>
+            
+            <!-- Cards Section -->
+            <div class="cards-section">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">💡</div>
+                        <div class="card-title">Today's Advisories</div>
+                    </div>
+                    <div class="advisory-pills">
+                        <div class="advisory-pill blue">
+                            <span>💧</span>
+                            <span>No irrigation needed</span>
+                        </div>
+                        <div class="advisory-pill red">
+                            <span>🐛</span>
+                            <span>Pest risk high</span>
+                        </div>
+                        <div class="advisory-pill yellow">
+                            <span>🌡️</span>
+                            <span>Temp stable</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">☀️</div>
+                        <div class="card-title">Weather Today</div>
+                    </div>
+                    <div>Sunny, 28°C<br>Perfect for field work</div>
+                </div>
+            </div>
+            
+            <!-- Bottom Navigation -->
+            <div class="bottom-nav">
+                <div class="nav-item active">
+                    <div class="nav-icon">📊</div>
+                    <div class="nav-label">Dashboard</div>
+                </div>
+                <div class="nav-item">
+                    <div class="nav-icon">💬</div>
+                    <div class="nav-label">Chat</div>
+                </div>
+                <div class="nav-item">
+                    <div class="nav-icon">🌤️</div>
+                    <div class="nav-label">Weather</div>
+                </div>
+                <div class="nav-item">
+                    <div class="nav-icon">📈</div>
+                    <div class="nav-label">Market</div>
+                </div>
+                <div class="nav-item">
+                    <div class="nav-icon">⚠️</div>
+                    <div class="nav-label">Alerts</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

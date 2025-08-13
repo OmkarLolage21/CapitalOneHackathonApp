@@ -27,11 +27,11 @@ class AppScaffoldWrapper extends StatelessWidget {
     final currentIndex = _getCurrentIndex(currentPath);
 
     final items = [
-      (Icons.dashboard_outlined, l.advisoriesToday),
-      (Icons.chat_bubble_outline, l.chat),
-      (Icons.wb_sunny_outlined, l.weather),
-      (Icons.currency_rupee_outlined, l.market),
-      (Icons.warning_amber_outlined, l.alerts),
+      _NavItem(Icons.dashboard_outlined, l.advisoriesToday),
+      _NavItem(Icons.chat_bubble_outline, l.chat),
+      _NavItem(Icons.wb_sunny_outlined, l.weather),
+      _NavItem(Icons.currency_rupee_outlined, l.market),
+      _NavItem(Icons.warning_amber_outlined, l.alerts),
     ];
 
     return Scaffold(
@@ -59,8 +59,8 @@ class AppScaffoldWrapper extends StatelessWidget {
             destinations: [
               for (final item in items)
                 NavigationDestination(
-                  icon: Icon(item.$1),
-                  label: item.$2,
+                  icon: Icon(item.icon),
+                  label: item.label,
                 )
             ],
           ),
@@ -86,4 +86,11 @@ class AppScaffoldWrapper extends StatelessWidget {
       context.go(routes[index]);
     }
   }
+}
+
+class _NavItem {
+  final IconData icon;
+  final String label;
+  
+  _NavItem(this.icon, this.label);
 }
