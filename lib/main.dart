@@ -7,6 +7,9 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'theme/app_theme.dart';
 import 'dummy_charts.dart';
+import 'dart:math' as math;
+import 'dart:math' show Random;
+import 'dart:async';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +33,8 @@ class AppState extends ChangeNotifier {
   String name = "Omkar";
   String role = "farmer"; // farmer | officer | ministry
   bool offline = false;
+  bool isAuthenticated = false;
+  bool isLoading = false;
 
   // Dummy weather/advisory values
   int tempC = 31;
@@ -45,6 +50,43 @@ class AppState extends ChangeNotifier {
     role = newRole;
     notifyListeners();
   }
+
+  // Authentication methods
+  Future<bool> login(String email, String password) async {
+    isLoading = true;
+    notifyListeners();
+
+    // Simulate API call with delay
+    await Future.delayed(const Duration(seconds: 2));
+
+    // Always succeed for demo
+    isAuthenticated = true;
+    isLoading = false;
+    notifyListeners();
+    return true;
+  }
+
+  Future<bool> register(String name, String email, String password) async {
+    isLoading = true;
+    notifyListeners();
+
+    // Simulate API call with delay
+    await Future.delayed(const Duration(seconds: 2));
+
+    // Update user name
+    this.name = name;
+
+    // Always succeed for demo
+    isAuthenticated = true;
+    isLoading = false;
+    notifyListeners();
+    return true;
+  }
+
+  void logout() {
+    isAuthenticated = false;
+    notifyListeners();
+  }
 }
 
 class AgriAdvisorApp extends StatelessWidget {
@@ -53,7 +95,7 @@ class AgriAdvisorApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: tr('app_name'),
+      title: tr('Prajna'),
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
@@ -61,7 +103,13 @@ class AgriAdvisorApp extends StatelessWidget {
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
       locale: context.locale,
-      home: const RootScaffold(),
+      initialRoute: '/splash',
+      routes: {
+        '/splash': (context) => const SplashScreen(),
+        '/login': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(),
+        '/home': (context) => const RootScaffold(),
+      },
     );
   }
 }
@@ -107,7 +155,33 @@ class _RootScaffoldState extends State<RootScaffold>
     final app = context.watch<AppState>();
     final theme = Theme.of(context);
 
+    // Page titles for the app bar
+    final pageTitles = [
+      tr('Prajna'),
+      tr('Krishi Chatbot'),
+      tr('Market'),
+      tr('Weather'),
+      tr('Profile'),
+    ];
+
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          pageTitles[_index],
+          style: TextStyle(
+            color: theme.primaryColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: _LangSelector(),
+          ),
+        ],
+      ),
       body: FadeTransition(
         opacity: Tween<double>(begin: 0.7, end: 1.0).animate(
           CurvedAnimation(
@@ -178,31 +252,31 @@ class _RootScaffoldState extends State<RootScaffold>
                 icon: Icon(_index == 0
                     ? MaterialCommunityIcons.view_dashboard
                     : MaterialCommunityIcons.view_dashboard_outline),
-                label: 'Dashboard',
+                label: tr('Home'),
               ),
               BottomNavigationBarItem(
                 icon: Icon(_index == 1
                     ? MaterialCommunityIcons.chat
                     : MaterialCommunityIcons.chat_outline),
-                label: 'Chat',
+                label: tr('Ask'),
               ),
               BottomNavigationBarItem(
                 icon: Icon(_index == 2
                     ? MaterialCommunityIcons.chart_line
                     : MaterialCommunityIcons.chart_line_variant),
-                label: 'Market',
+                label: tr('Markets'),
               ),
               BottomNavigationBarItem(
                 icon: Icon(_index == 3
                     ? MaterialCommunityIcons.weather_partly_cloudy
                     : MaterialCommunityIcons.weather_partly_cloudy),
-                label: 'Weather',
+                label: tr('Weather'),
               ),
               BottomNavigationBarItem(
                 icon: Icon(_index == 4
                     ? MaterialCommunityIcons.account
                     : MaterialCommunityIcons.account_outline),
-                label: 'Profile',
+                label: tr('Profile'),
               ),
             ],
             selectedFontSize: 12,
@@ -218,9 +292,9 @@ class _RootScaffoldState extends State<RootScaffold>
 
   String _greeting(BuildContext context, String name) {
     final hour = DateTime.now().hour;
-    if (hour < 12) return tr('greeting_morning');
-    if (hour < 18) return tr('greeting_afternoon');
-    return tr('greeting_evening');
+    if (hour < 12) return tr('greeting morning');
+    if (hour < 18) return tr('greeting afternoon');
+    return tr('greeting evening');
   }
 }
 
@@ -267,6 +341,756 @@ class _LangSelector extends StatelessWidget {
   }
 }
 
+// -------------------- AUTH SCREENS --------------------
+
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeInAnimation;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    );
+
+    _fadeInAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Interval(0.0, 0.5, curve: Curves.easeIn),
+      ),
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Interval(0.2, 0.8, curve: Curves.easeOutBack),
+      ),
+    );
+
+    // Start animations
+    _controller.forward();
+
+    // Navigate to login after delay
+    Timer(const Duration(milliseconds: 2500), () {
+      // Check if user is authenticated
+      final appState = context.read<AppState>();
+      if (appState.isAuthenticated) {
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        Navigator.pushReplacementNamed(context, '/login');
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.teal.shade700,
+              Colors.teal.shade500,
+            ],
+          ),
+        ),
+        child: Center(
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) {
+              return FadeTransition(
+                opacity: _fadeInAnimation,
+                child: Transform.scale(
+                  scale: _scaleAnimation.value,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: screenSize.width * 0.4,
+                        height: screenSize.width * 0.4,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: Icon(
+                            MaterialCommunityIcons.sprout,
+                            color: Colors.teal.shade700,
+                            size: screenSize.width * 0.2,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      Text(
+                        tr('Prajna'),
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: 1.2,
+                          shadows: [
+                            Shadow(
+                              blurRadius: 4,
+                              color: Colors.black.withOpacity(0.3),
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        tr('farmer friends'),
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.white.withOpacity(0.9),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 60),
+                      SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: CircularProgressIndicator(
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                          strokeWidth: 3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _obscureText = true;
+  bool _rememberMe = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _login() async {
+    if (_formKey.currentState!.validate()) {
+      final appState = context.read<AppState>();
+      final success = await appState.login(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+
+      if (success && mounted) {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final appState = context.watch<AppState>();
+    final isLoading = appState.isLoading;
+
+    return Scaffold(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          physics: const ClampingScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 40),
+                // Logo & App Name
+                Center(
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: Colors.teal.shade100,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          MaterialCommunityIcons.sprout,
+                          color: Colors.teal.shade700,
+                          size: 50,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        tr('app_name'),
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 30),
+                // Welcome Text
+                Text(
+                  tr('welcome'),
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  tr('Login'),
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                // Login Form
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      // Email Field
+                      TextFormField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: InputDecoration(
+                          labelText: tr('email'),
+                          prefixIcon: const Icon(Icons.email_outlined),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your email';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      // Password Field
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: _obscureText,
+                        decoration: InputDecoration(
+                          labelText: tr('password'),
+                          prefixIcon: const Icon(Icons.lock_outlined),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscureText
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscureText = !_obscureText;
+                              });
+                            },
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your password';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      // Remember Me & Forgot Password
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: _rememberMe,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _rememberMe = value ?? false;
+                                  });
+                                },
+                              ),
+                              const Text('Remember Me'),
+                            ],
+                          ),
+                          TextButton(
+                            onPressed: () {},
+                            child: Text(tr('Forgot Password')),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      // Login Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: isLoading ? null : _login,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.teal.shade600,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: isLoading
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text(
+                                  tr('Sign in'),
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Or continue with
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Divider(
+                              color: Colors.grey.shade400,
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Text(
+                              tr('or'),
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Divider(
+                              color: Colors.grey.shade400,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      // Social Login Buttons
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Google
+                          OutlinedButton.icon(
+                            onPressed: () {},
+                            icon: Icon(MaterialCommunityIcons.google),
+                            label: Text(tr('Login with google')),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: Colors.grey.shade300),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      // Guest Mode
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pushReplacementNamed(context, '/home');
+                        },
+                        child: Text(tr('continue as guest')),
+                      ),
+                      const SizedBox(height: 32),
+                      // Register Link
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            tr('Dont have an account?'),
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pushNamed(context, '/register');
+                            },
+                            child: Text(
+                              tr('Sign Up'),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
+
+  @override
+  State<RegisterScreen> createState() => _RegisterScreenState();
+}
+
+class _RegisterScreenState extends State<RegisterScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  bool _obscureText = true;
+  bool _obscureConfirmText = true;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _register() async {
+    if (_formKey.currentState!.validate()) {
+      final appState = context.read<AppState>();
+      final success = await appState.register(
+        _nameController.text.trim(),
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+
+      if (success && mounted) {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final appState = context.watch<AppState>();
+    final isLoading = appState.isLoading;
+
+    return Scaffold(
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 20),
+                // Welcome Text
+                Text(
+                  tr('register'),
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  tr('Create an account'),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                // Register Form
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      // Name Field
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: InputDecoration(
+                          labelText: tr('name'),
+                          prefixIcon: const Icon(Icons.person_outline),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your name';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      // Email Field
+                      TextFormField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: InputDecoration(
+                          labelText: tr('email'),
+                          prefixIcon: const Icon(Icons.email_outlined),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your email';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      // Password Field
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: _obscureText,
+                        decoration: InputDecoration(
+                          labelText: tr('password'),
+                          prefixIcon: const Icon(Icons.lock_outlined),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscureText
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscureText = !_obscureText;
+                              });
+                            },
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your password';
+                          }
+                          if (value.length < 6) {
+                            return 'Password must be at least 6 characters';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      // Confirm Password Field
+                      TextFormField(
+                        controller: _confirmPasswordController,
+                        obscureText: _obscureConfirmText,
+                        decoration: InputDecoration(
+                          labelText: tr('Confirm Password'),
+                          prefixIcon: const Icon(Icons.lock_outlined),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscureConfirmText
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscureConfirmText = !_obscureConfirmText;
+                              });
+                            },
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please confirm your password';
+                          }
+                          if (value != _passwordController.text) {
+                            return 'Passwords do not match';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 32),
+                      // Register Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: isLoading ? null : _register,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.teal.shade600,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: isLoading
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text(
+                                  tr('Sign Up'),
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Or continue with
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Divider(
+                              color: Colors.grey.shade400,
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Text(
+                              tr('or'),
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Divider(
+                              color: Colors.grey.shade400,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      // Social Login Buttons
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Google
+                          OutlinedButton.icon(
+                            onPressed: () {},
+                            icon: Icon(MaterialCommunityIcons.google),
+                            label: Text(tr('Login with google')),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: Colors.grey.shade300),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 32),
+                      // Login Link
+                      Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              tr('Already have an account?'),
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                              child: Text(
+                                tr('Login'),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // -------------------- DASHBOARD --------------------
 
 class DashboardScreen extends StatelessWidget {
@@ -280,7 +1104,7 @@ class DashboardScreen extends StatelessWidget {
       children: [
         _RoleSwitcher(),
         AdvisoryCard(
-          title: tr('critical_advisory'),
+          title: tr('Advisory'),
           content: tr('advisory_example'),
           reasoningTitle: tr('advisory_reasoning_title'),
           reasoningBody: tr('reasoning_text'),
@@ -316,7 +1140,7 @@ class _RoleSwitcher extends StatelessWidget {
               context, 'ministry', tr('role_ministry'), app.role == 'ministry'),
           const Spacer(),
           IconButton(
-            tooltip: "Toggle Offline",
+            tooltip: tr('toggle_offline'),
             onPressed: () => context.read<AppState>().toggleOffline(),
             icon: const Icon(Icons.wifi_off),
           ),
@@ -2067,22 +2891,66 @@ class MarketPriceTrackerScreen extends StatefulWidget {
       _MarketPriceTrackerScreenState();
 }
 
-class _MarketPriceTrackerScreenState extends State<MarketPriceTrackerScreen> {
+class _MarketPriceTrackerScreenState extends State<MarketPriceTrackerScreen>
+    with SingleTickerProviderStateMixin {
   String trendType = '7-day';
   String selectedCrop = 'Wheat';
   String selectedLocation = 'Pune';
   bool showWhy = false;
+  int selectedChartIndex = 0;
+
+  late TabController _tabController;
 
   final List<String> crops = ['Wheat', 'Rice', 'Maize', 'Soybean'];
   final List<String> locations = ['Pune', 'Mumbai', 'Nagpur', 'Nashik'];
 
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  // Getter to return the appropriate data set based on selected trend type
+  List<Map<String, dynamic>> get data =>
+      trendType == '7-day' ? data7day : data30day;
+
   // Dummy price data for 7 days
-  List<Map<String, dynamic>> get data => List.generate(7, (i) {
+  List<Map<String, dynamic>> get data7day => List.generate(7, (i) {
         final date = DateTime.now().subtract(Duration(days: 6 - i));
-        // Dummy prices
-        final min = 1900 + i * 10;
-        final max = 2000 + i * 10;
-        final modal = 1950 + i * 10;
+        // Create dummy prices with some realistic fluctuation
+        final basePrice = 1900 + (i * 15);
+        final variance =
+            (i % 3 == 0) ? -5.0 : 8.0; // Some days drop, others rise
+
+        final min = basePrice + variance - 30;
+        final max = basePrice + variance + 70;
+        final modal = basePrice + variance + 25;
+
+        return {
+          'date': date,
+          'min': min.toDouble(),
+          'max': max.toDouble(),
+          'modal': modal.toDouble(),
+        };
+      });
+
+  // Dummy price data for 30 days
+  List<Map<String, dynamic>> get data30day => List.generate(30, (i) {
+        final date = DateTime.now().subtract(Duration(days: 29 - i));
+        // Create dummy prices with a realistic market trend
+        final trend = math.sin(i / 5) * 50; // Create wave pattern
+        final basePrice = 1900 + (i * 3.5) + trend;
+
+        final min = basePrice - 20 - (Random().nextDouble() * 10);
+        final max = basePrice + 60 + (Random().nextDouble() * 15);
+        final modal = basePrice + 15 + (Random().nextDouble() * 10);
+
         return {
           'date': date,
           'min': min.toDouble(),
@@ -2093,160 +2961,903 @@ class _MarketPriceTrackerScreenState extends State<MarketPriceTrackerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isSmallScreen = MediaQuery.of(context).size.width < 360;
+
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white.withAlpha((0.95 * 255).toInt()),
+        backgroundColor: theme.colorScheme.surface,
         elevation: 0,
         title: Row(
           children: [
-            Icon(Icons.currency_rupee_rounded, color: Colors.indigo.shade700),
-            const SizedBox(width: 10),
-            Text('Market Price Tracker',
-                style: const TextStyle(fontWeight: FontWeight.w700)),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade100,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(MaterialCommunityIcons.chart_line,
+                  color: Colors.orange.shade800, size: isSmallScreen ? 18 : 22),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Market Price Tracker',
+              style: theme.textTheme.titleMedium!.copyWith(
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.2,
+              ),
+            ),
           ],
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(14),
+        padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
         children: [
-          // Crop/location dropdowns
-          Row(
-            children: [
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: selectedCrop,
-                  decoration: InputDecoration(
-                    labelText: 'Crop',
-                    filled: true,
-                    fillColor: Colors.indigo.shade50,
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                  ),
-                  items: crops
-                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                      .toList(),
-                  onChanged: (v) => setState(() => selectedCrop = v!),
+          // Filter Section
+          Container(
+            padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.orange.shade50,
+                  Colors.orange.shade100.withOpacity(0.3),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: selectedLocation,
-                  decoration: InputDecoration(
-                    labelText: 'Location',
-                    filled: true,
-                    fillColor: Colors.indigo.shade50,
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14)),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Find Price Trends',
+                  style: theme.textTheme.titleMedium!.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.orange.shade800,
                   ),
-                  items: locations
-                      .map((l) => DropdownMenuItem(value: l, child: Text(l)))
-                      .toList(),
-                  onChanged: (v) => setState(() => selectedLocation = v!),
                 ),
-              ),
-              const SizedBox(width: 12),
-              DropdownButton<String>(
-                value: trendType,
-                items: ['7-day', '30-day']
-                    .map((t) => DropdownMenuItem(value: t, child: Text(t)))
-                    .toList(),
-                onChanged: (v) => setState(() => trendType = v!),
-              ),
-            ],
+                const SizedBox(height: 16),
+                // Filter Controls
+                isSmallScreen
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Crop dropdown
+                          DropdownButtonFormField<String>(
+                            value: selectedCrop,
+                            decoration: InputDecoration(
+                              labelText: tr('crop'),
+                              labelStyle:
+                                  TextStyle(color: Colors.orange.shade800),
+                              filled: true,
+                              fillColor: Colors.white,
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide:
+                                    BorderSide(color: Colors.orange.shade200),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide:
+                                    BorderSide(color: Colors.orange.shade400),
+                              ),
+                              prefixIcon: Icon(MaterialCommunityIcons.sprout,
+                                  color: Colors.orange.shade600, size: 18),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                            ),
+                            items: crops
+                                .map((c) =>
+                                    DropdownMenuItem(value: c, child: Text(c)))
+                                .toList(),
+                            onChanged: (v) => setState(() => selectedCrop = v!),
+                            icon: Icon(Icons.arrow_drop_down,
+                                color: Colors.orange.shade800),
+                          ),
+                          const SizedBox(height: 10),
+                          // Location dropdown
+                          DropdownButtonFormField<String>(
+                            value: selectedLocation,
+                            decoration: InputDecoration(
+                              labelText: tr('location'),
+                              labelStyle:
+                                  TextStyle(color: Colors.orange.shade800),
+                              filled: true,
+                              fillColor: Colors.white,
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide:
+                                    BorderSide(color: Colors.orange.shade200),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide:
+                                    BorderSide(color: Colors.orange.shade400),
+                              ),
+                              prefixIcon: Icon(
+                                  MaterialCommunityIcons.map_marker,
+                                  color: Colors.orange.shade600,
+                                  size: 18),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                            ),
+                            items: locations
+                                .map((l) =>
+                                    DropdownMenuItem(value: l, child: Text(l)))
+                                .toList(),
+                            onChanged: (v) =>
+                                setState(() => selectedLocation = v!),
+                            icon: Icon(Icons.arrow_drop_down,
+                                color: Colors.orange.shade800),
+                          ),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          // Crop dropdown
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              value: selectedCrop,
+                              decoration: InputDecoration(
+                                labelText: tr('crop'),
+                                labelStyle:
+                                    TextStyle(color: Colors.orange.shade800),
+                                filled: true,
+                                fillColor: Colors.white,
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  borderSide:
+                                      BorderSide(color: Colors.orange.shade200),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  borderSide:
+                                      BorderSide(color: Colors.orange.shade400),
+                                ),
+                                prefixIcon: Icon(MaterialCommunityIcons.sprout,
+                                    color: Colors.orange.shade600),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 12),
+                              ),
+                              items: crops
+                                  .map((c) => DropdownMenuItem(
+                                      value: c, child: Text(c)))
+                                  .toList(),
+                              onChanged: (v) =>
+                                  setState(() => selectedCrop = v!),
+                              icon: Icon(Icons.arrow_drop_down,
+                                  color: Colors.orange.shade800),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          // Location dropdown
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              value: selectedLocation,
+                              decoration: InputDecoration(
+                                labelText: tr('location'),
+                                labelStyle:
+                                    TextStyle(color: Colors.orange.shade800),
+                                filled: true,
+                                fillColor: Colors.white,
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  borderSide:
+                                      BorderSide(color: Colors.orange.shade200),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  borderSide:
+                                      BorderSide(color: Colors.orange.shade400),
+                                ),
+                                prefixIcon: Icon(
+                                    MaterialCommunityIcons.map_marker,
+                                    color: Colors.orange.shade600),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 12),
+                              ),
+                              items: locations
+                                  .map((l) => DropdownMenuItem(
+                                      value: l, child: Text(l)))
+                                  .toList(),
+                              onChanged: (v) =>
+                                  setState(() => selectedLocation = v!),
+                              icon: Icon(Icons.arrow_drop_down,
+                                  color: Colors.orange.shade800),
+                            ),
+                          ),
+                        ],
+                      ),
+                const SizedBox(height: 16),
+                // Time period selector
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildTimeButton('7-day', '7-day'),
+                    const SizedBox(width: 12),
+                    _buildTimeButton('30-day', '30-day'),
+                  ],
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 18),
-          Card(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-            elevation: 2,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+          const SizedBox(height: 20),
+
+          // Chart Section
+          Container(
+            margin: EdgeInsets.symmetric(vertical: isSmallScreen ? 8 : 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Chart header
+                Padding(
+                  padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+                  child: Row(
                     children: [
-                      Icon(Icons.show_chart, color: Colors.indigo.shade700),
-                      const SizedBox(width: 10),
-                      Text('Price Trend',
-                          style: const TextStyle(fontWeight: FontWeight.w700)),
+                      Container(
+                        padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.orange.shade400,
+                              Colors.orange.shade600
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.orange.shade200.withOpacity(0.5),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          MaterialCommunityIcons.chart_line,
+                          color: Colors.white,
+                          size: isSmallScreen ? 18 : 22,
+                        ),
+                      ),
+                      SizedBox(width: isSmallScreen ? 10 : 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '$selectedCrop Price Trend',
+                            style: theme.textTheme.titleMedium!.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: Colors.orange.shade800,
+                            ),
+                          ),
+                          Text(
+                            '$selectedLocation Market · $trendType',
+                            style: theme.textTheme.bodySmall!.copyWith(
+                              color: Colors.grey.shade600,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
                       const Spacer(),
                       TextButton.icon(
                         icon: Icon(
                           showWhy ? Icons.expand_less : Icons.info_outline,
-                          color: Colors.indigo.shade700,
+                          color: Colors.orange.shade700,
+                          size: isSmallScreen ? 18 : 20,
                         ),
                         label: Text(
-                          'Why?',
+                          tr('why'),
                           style: TextStyle(
-                              color: Colors.indigo.shade700,
-                              fontWeight: FontWeight.w700),
+                            color: Colors.orange.shade700,
+                            fontWeight: FontWeight.w600,
+                            fontSize: isSmallScreen ? 12 : 14,
+                          ),
                         ),
                         onPressed: () => setState(() => showWhy = !showWhy),
                         style: TextButton.styleFrom(
-                          backgroundColor: Colors.indigo.shade50,
+                          backgroundColor: Colors.orange.shade50,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ],
                   ),
-                  SizedBox(
-                    height: 120,
-                    child: DummyInteractiveLineChart(data: data),
+                ),
+
+                // Chart tabs
+                Padding(
+                  padding:
+                      EdgeInsets.symmetric(horizontal: isSmallScreen ? 12 : 16),
+                  child: TabBar(
+                    controller: _tabController,
+                    labelColor: Colors.orange.shade800,
+                    unselectedLabelColor: Colors.grey.shade600,
+                    indicatorColor: Colors.orange.shade500,
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    dividerColor: Colors.transparent,
+                    tabs: const [
+                      Tab(text: 'Line Chart'),
+                      Tab(text: 'Bar Chart'),
+                    ],
+                    onTap: (index) {
+                      setState(() {
+                        selectedChartIndex = index;
+                      });
+                    },
                   ),
-                  AnimatedCrossFade(
-                    crossFadeState: showWhy
-                        ? CrossFadeState.showFirst
-                        : CrossFadeState.showSecond,
-                    duration: const Duration(milliseconds: 220),
-                    firstChild: Padding(
-                      padding: const EdgeInsets.only(top: 10),
-                      child: Text(
-                          'Prices are rising steadily due to increased demand and lower supply. Holding may yield better returns next week.'),
+                ),
+
+                // Chart content
+                Container(
+                  height: isSmallScreen ? 220 : 300,
+                  padding: EdgeInsets.only(
+                      top: isSmallScreen ? 16 : 24,
+                      left: isSmallScreen ? 8 : 16,
+                      right: isSmallScreen ? 8 : 16,
+                      bottom: isSmallScreen ? 8 : 16),
+                  child: _buildChartByIndex(),
+                ),
+
+                // Analysis content
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  height: showWhy ? null : 0,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isSmallScreen ? 12 : 16,
+                    vertical: showWhy ? (isSmallScreen ? 12 : 16) : 0,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(isSmallScreen ? 16 : 20),
+                      bottomRight: Radius.circular(isSmallScreen ? 16 : 20),
                     ),
-                    secondChild: const SizedBox.shrink(),
                   ),
-                ],
-              ),
+                  child: showWhy
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Market Analysis',
+                              style: theme.textTheme.titleSmall!.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: Colors.orange.shade800,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Prices for $selectedCrop in $selectedLocation are showing a ${trendType == '7-day' ? 'steady increase' : 'cyclical pattern'} due to seasonal demand changes and limited supply. Based on historical data, prices are expected to ${trendType == '7-day' ? 'continue rising for another 2-3 weeks' : 'stabilize in the coming month'}.',
+                              style: theme.textTheme.bodyMedium!.copyWith(
+                                color: Colors.grey.shade700,
+                                height: 1.5,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                _buildMetricBadge(
+                                    'Volatility', 'Moderate', Colors.amber),
+                                const SizedBox(width: 8),
+                                _buildMetricBadge(
+                                    'Trend',
+                                    trendType == '7-day'
+                                        ? 'Upward'
+                                        : 'Cyclical',
+                                    Colors.green),
+                                const SizedBox(width: 8),
+                                _buildMetricBadge(
+                                    'Confidence', '85%', Colors.blue),
+                              ],
+                            ),
+                          ],
+                        )
+                      : const SizedBox(),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 18),
-          // Responsive DataTable
-          Card(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-            elevation: 2,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: DataTable(
-                  columns: const [
-                    DataColumn(label: Text('Date')),
-                    DataColumn(label: Text('Min Price')),
-                    DataColumn(label: Text('Max Price')),
-                    DataColumn(label: Text('Modal Price')),
-                  ],
-                  rows: data
-                      .map(
-                        (row) => DataRow(
-                          cells: [
-                            DataCell(Text(
-                                "${row['date'].day}/${row['date'].month}")),
-                            DataCell(Text(row['min'].toString())),
-                            DataCell(Text(row['max'].toString())),
-                            DataCell(Text(row['modal'].toString())),
-                          ],
-                        ),
-                      )
-                      .toList(),
+
+          const SizedBox(height: 20),
+
+          // Price Data Table
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
-              ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade100,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          MaterialCommunityIcons.table,
+                          color: Colors.orange.shade700,
+                          size: isSmallScreen ? 18 : 22,
+                        ),
+                      ),
+                      SizedBox(width: isSmallScreen ? 10 : 12),
+                      Text(
+                        'Price Data',
+                        style: theme.textTheme.titleMedium!.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: theme.textTheme.titleMedium!.color,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isSmallScreen ? 8 : 16,
+                      vertical: isSmallScreen ? 0 : 8,
+                    ),
+                    child: DataTable(
+                      columnSpacing: isSmallScreen ? 12 : 24,
+                      dataRowMinHeight: isSmallScreen ? 45 : 56,
+                      dataRowMaxHeight: isSmallScreen ? 45 : 56,
+                      headingRowColor:
+                          MaterialStateProperty.all(Colors.orange.shade50),
+                      headingTextStyle: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange.shade800,
+                      ),
+                      columns: [
+                        DataColumn(
+                            label: Text('Date',
+                                style: TextStyle(
+                                    fontSize: isSmallScreen ? 13 : 14))),
+                        DataColumn(
+                            label: Text('Min ₹',
+                                style: TextStyle(
+                                    fontSize: isSmallScreen ? 13 : 14))),
+                        DataColumn(
+                            label: Text('Max ₹',
+                                style: TextStyle(
+                                    fontSize: isSmallScreen ? 13 : 14))),
+                        DataColumn(
+                            label: Text('Modal ₹',
+                                style: TextStyle(
+                                    fontSize: isSmallScreen ? 13 : 14))),
+                      ],
+                      rows: data
+                          .sublist(data.length > 10 ? data.length - 10 : 0)
+                          .map(
+                            (row) => DataRow(
+                              cells: [
+                                DataCell(Text(
+                                  "${row['date'].day}/${row['date'].month}",
+                                  style: TextStyle(
+                                      fontSize: isSmallScreen ? 12 : 13),
+                                )),
+                                DataCell(Text(
+                                  "₹${row['min'].toStringAsFixed(0)}",
+                                  style: TextStyle(
+                                      fontSize: isSmallScreen ? 12 : 13),
+                                )),
+                                DataCell(Text(
+                                  "₹${row['max'].toStringAsFixed(0)}",
+                                  style: TextStyle(
+                                      fontSize: isSmallScreen ? 12 : 13),
+                                )),
+                                DataCell(Text(
+                                  "₹${row['modal'].toStringAsFixed(0)}",
+                                  style: TextStyle(
+                                    fontSize: isSmallScreen ? 12 : 13,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.orange.shade800,
+                                  ),
+                                )),
+                              ],
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ),
+                ),
+                SizedBox(height: isSmallScreen ? 8 : 16),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTimeButton(String value, String label) {
+    final bool isSelected = trendType == value;
+    return InkWell(
+      onTap: () => setState(() => trendType = value),
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.orange.shade500 : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? Colors.transparent : Colors.orange.shade300,
+            width: 1.5,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.orange.shade200.withOpacity(0.5),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            color: isSelected ? Colors.white : Colors.orange.shade700,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMetricBadge(String label, String value, MaterialColor color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+        decoration: BoxDecoration(
+          color: color.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.shade200),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: color.shade700,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: color.shade800,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChartByIndex() {
+    switch (selectedChartIndex) {
+      case 0:
+        return _buildLineChart();
+      case 1:
+        return _buildBarChart();
+      default:
+        return _buildLineChart();
+    }
+  }
+
+  Widget _buildLineChart() {
+    final isSmallScreen = MediaQuery.of(context).size.width < 360;
+    return LineChart(
+      LineChartData(
+        minX: 0,
+        maxX: data.length.toDouble() - 1,
+        minY: data.map((e) => e['min'] as double).reduce(math.min) - 50,
+        maxY: data.map((e) => e['max'] as double).reduce(math.max) + 50,
+        clipData: FlClipData.all(),
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: 100,
+          getDrawingHorizontalLine: (value) {
+            return FlLine(
+              color: Colors.grey.shade200,
+              strokeWidth: 1,
+            );
+          },
+        ),
+        borderData: FlBorderData(
+          show: true,
+          border: Border(
+            bottom: BorderSide(color: Colors.grey.shade300, width: 1),
+            left: BorderSide(color: Colors.grey.shade300, width: 1),
+          ),
+        ),
+        titlesData: FlTitlesData(
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 30,
+              interval: trendType == '7-day' ? 1 : 5,
+              getTitlesWidget: (value, meta) {
+                if (value % 1 != 0 || value >= data.length)
+                  return const Text('');
+                final date = data[value.toInt()]['date'] as DateTime;
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    '${date.day}/${date.month}',
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: isSmallScreen ? 9 : 11,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              interval: 100,
+              reservedSize: 40,
+              getTitlesWidget: (value, meta) {
+                return Text(
+                  '₹${value.toInt()}',
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: isSmallScreen ? 9 : 11,
+                  ),
+                );
+              },
+            ),
+          ),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        lineTouchData: LineTouchData(
+          touchTooltipData: LineTouchTooltipData(
+            tooltipPadding: const EdgeInsets.all(8),
+            tooltipRoundedRadius: 8,
+            tooltipMargin: 8,
+            getTooltipItems: (touchedSpots) {
+              return touchedSpots.map((spot) {
+                String title = '';
+                Color color;
+
+                if (spot.barIndex == 0) {
+                  title = 'Max: ₹${spot.y.toInt()}';
+                  color = Colors.green.shade700;
+                } else if (spot.barIndex == 1) {
+                  title = 'Modal: ₹${spot.y.toInt()}';
+                  color = Colors.orange.shade700;
+                } else {
+                  title = 'Min: ₹${spot.y.toInt()}';
+                  color = Colors.red.shade700;
+                }
+
+                return LineTooltipItem(
+                  title,
+                  TextStyle(color: color, fontWeight: FontWeight.bold),
+                );
+              }).toList();
+            },
+          ),
+        ),
+        lineBarsData: [
+          // Max price line
+          LineChartBarData(
+            spots: List.generate(
+              data.length,
+              (i) => FlSpot(i.toDouble(), data[i]['max'] as double),
+            ),
+            isCurved: true,
+            color: Colors.green.shade500,
+            barWidth: 3,
+            isStrokeCapRound: true,
+            dotData: FlDotData(show: false),
+            belowBarData: BarAreaData(
+              show: true,
+              color: Colors.green.shade100.withOpacity(0.2),
+            ),
+          ),
+          // Modal price line
+          LineChartBarData(
+            spots: List.generate(
+              data.length,
+              (i) => FlSpot(i.toDouble(), data[i]['modal'] as double),
+            ),
+            isCurved: true,
+            color: Colors.orange.shade500,
+            barWidth: 3,
+            isStrokeCapRound: true,
+            dotData: FlDotData(show: false),
+            belowBarData: BarAreaData(
+              show: true,
+              color: Colors.orange.shade100.withOpacity(0.2),
+            ),
+          ),
+          // Min price line
+          LineChartBarData(
+            spots: List.generate(
+              data.length,
+              (i) => FlSpot(i.toDouble(), data[i]['min'] as double),
+            ),
+            isCurved: true,
+            color: Colors.red.shade400,
+            barWidth: 3,
+            isStrokeCapRound: true,
+            dotData: FlDotData(show: false),
+            belowBarData: BarAreaData(
+              show: true,
+              color: Colors.red.shade100.withOpacity(0.2),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBarChart() {
+    final isSmallScreen = MediaQuery.of(context).size.width < 360;
+    final visibleDataPoints = trendType == '7-day'
+        ? data
+        : data
+            .where((item) =>
+                data.indexOf(item) % 3 == 0 ||
+                data.indexOf(item) == data.length - 1)
+            .toList();
+
+    return BarChart(
+      BarChartData(
+        alignment: BarChartAlignment.spaceEvenly,
+        maxY:
+            visibleDataPoints.map((e) => e['max'] as double).reduce(math.max) +
+                50,
+        minY:
+            visibleDataPoints.map((e) => e['min'] as double).reduce(math.min) -
+                50,
+        barGroups: List.generate(
+          visibleDataPoints.length,
+          (i) {
+            final item = visibleDataPoints[i];
+            return BarChartGroupData(
+              x: i,
+              barRods: [
+                BarChartRodData(
+                  toY: item['modal'] as double,
+                  width: isSmallScreen ? 12 : 16,
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(6)),
+                  rodStackItems: [
+                    BarChartRodStackItem(
+                        0, item['min'] as double, Colors.red.shade300),
+                    BarChartRodStackItem(item['min'] as double,
+                        item['modal'] as double, Colors.orange.shade400),
+                    BarChartRodStackItem(item['modal'] as double,
+                        item['max'] as double, Colors.green.shade400),
+                  ],
+                ),
+              ],
+            );
+          },
+        ),
+        titlesData: FlTitlesData(
+          show: true,
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, meta) {
+                if (value >= visibleDataPoints.length) return const Text('');
+                final date =
+                    visibleDataPoints[value.toInt()]['date'] as DateTime;
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    '${date.day}/${date.month}',
+                    style: TextStyle(
+                      color: Colors.grey.shade700,
+                      fontSize: isSmallScreen ? 9 : 11,
+                    ),
+                  ),
+                );
+              },
+              reservedSize: 30,
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              interval: 200,
+              reservedSize: 40,
+              getTitlesWidget: (value, meta) {
+                return Text(
+                  '₹${value.toInt()}',
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: isSmallScreen ? 9 : 11,
+                  ),
+                );
+              },
+            ),
+          ),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        gridData: FlGridData(
+          show: true,
+          horizontalInterval: 200,
+          getDrawingHorizontalLine: (value) => FlLine(
+            color: Colors.grey.shade200,
+            strokeWidth: 1,
+          ),
+          drawVerticalLine: false,
+        ),
+        borderData: FlBorderData(
+          show: true,
+          border: Border(
+            bottom: BorderSide(color: Colors.grey.shade300),
+            left: BorderSide(color: Colors.grey.shade300),
+          ),
+        ),
+        barTouchData: BarTouchData(
+          touchTooltipData: BarTouchTooltipData(
+            tooltipPadding: const EdgeInsets.all(8),
+            tooltipMargin: 8,
+            getTooltipItem: (group, groupIndex, rod, rodIndex) {
+              final item = visibleDataPoints[group.x];
+              return BarTooltipItem(
+                'Min: ₹${item['min'].toStringAsFixed(0)}\n'
+                'Modal: ₹${item['modal'].toStringAsFixed(0)}\n'
+                'Max: ₹${item['max'].toStringAsFixed(0)}',
+                const TextStyle(
+                    color: Colors.black87, fontWeight: FontWeight.w500),
+              );
+            },
+          ),
+        ),
       ),
     );
   }
@@ -2392,54 +4003,809 @@ class NewsfeedScreen extends StatelessWidget {
   }
 }
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  int selectedTabIndex = 0;
+
+  // Activity data
+  final List<Map<String, dynamic>> activityData = [
+    {'day': 'Mon', 'value': 4, 'type': 'Queries'},
+    {'day': 'Tue', 'value': 7, 'type': 'Queries'},
+    {'day': 'Wed', 'value': 3, 'type': 'Queries'},
+    {'day': 'Thu', 'value': 5, 'type': 'Queries'},
+    {'day': 'Fri', 'value': 8, 'type': 'Queries'},
+    {'day': 'Sat', 'value': 6, 'type': 'Queries'},
+    {'day': 'Sun', 'value': 2, 'type': 'Queries'},
+  ];
+
+  // Crop data
+  final List<Map<String, dynamic>> cropInterests = [
+    {'name': 'Wheat', 'percentage': 35},
+    {'name': 'Rice', 'percentage': 25},
+    {'name': 'Maize', 'percentage': 15},
+    {'name': 'Soybean', 'percentage': 10},
+    {'name': 'Cotton', 'percentage': 15},
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) {
+        setState(() {
+          selectedTabIndex = _tabController.index;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
+    final theme = Theme.of(context);
+    final isSmallScreen = MediaQuery.of(context).size.width < 360;
+
     return Scaffold(
-      appBar: AppBar(title: Text(tr('profile'))),
-      body: ListView(
-        padding: const EdgeInsets.all(12),
-        children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundColor: Colors.green.shade100,
-                    child: const Icon(Icons.person, color: Colors.black54),
+      body: CustomScrollView(
+        slivers: [
+          // App Bar with profile header
+          SliverAppBar(
+            expandedHeight: 200.0,
+            pinned: true,
+            backgroundColor: theme.colorScheme.primary,
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.teal.shade700,
+                      Colors.teal.shade500,
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
+                ),
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
                     child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(app.name,
-                            style: Theme.of(context).textTheme.titleMedium),
-                        const SizedBox(height: 4),
-                        Text("Role: ${app.role}"),
+                        Row(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border:
+                                    Border.all(color: Colors.white, width: 3),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 10,
+                                    spreadRadius: 1,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: CircleAvatar(
+                                radius: isSmallScreen ? 32 : 40,
+                                backgroundColor: Colors.teal.shade200,
+                                child: Text(
+                                  app.name.substring(0, 1).toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: isSmallScreen ? 28 : 36,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.teal.shade800,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    app.name,
+                                    style:
+                                        theme.textTheme.headlineSmall!.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Text(
+                                      app.role == 'farmer'
+                                          ? tr('role_farmer')
+                                          : app.role == 'officer'
+                                              ? tr('role_officer')
+                                              : tr('role_ministry'),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () {
+                                // Edit profile function
+                              },
+                              icon: const Icon(
+                                Icons.edit,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _buildStatItem(context, '23', 'Queries'),
+                            _buildStatItem(context, '5', 'Crops'),
+                            _buildStatItem(context, '12', 'Alerts'),
+                          ],
+                        ),
                       ],
                     ),
                   ),
-                ],
+                ),
               ),
             ),
           ),
-          Card(
-            child: SwitchListTile(
-              title: const Text("Offline Mode (simulate)"),
-              value: app.offline,
-              onChanged: (_) => context.read<AppState>().toggleOffline(),
-              secondary: const Icon(Icons.wifi_off),
+
+          // Main content
+          SliverToBoxAdapter(
+            child: Column(
+              children: [
+                // Settings and account section
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.1),
+                          blurRadius: 10,
+                          spreadRadius: 0,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        // Offline mode toggle
+                        SwitchListTile(
+                          title: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.teal.shade50,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  Icons.wifi_off_rounded,
+                                  color: Colors.teal.shade700,
+                                  size: 22,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                "Offline Mode",
+                                style: theme.textTheme.titleMedium!.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                          subtitle: const Padding(
+                            padding: EdgeInsets.only(top: 4.0),
+                            child: Text(
+                              "Access key features without internet connection",
+                              style: TextStyle(fontSize: 12),
+                            ),
+                          ),
+                          value: app.offline,
+                          onChanged: (_) =>
+                              context.read<AppState>().toggleOffline(),
+                          activeColor: Colors.teal.shade700,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                        ),
+                        const Divider(),
+                        // Location
+                        ListTile(
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.teal.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.location_on_rounded,
+                              color: Colors.teal.shade700,
+                              size: 22,
+                            ),
+                          ),
+                          title: Text(
+                            "Location",
+                            style: theme.textTheme.titleMedium!.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          subtitle: const Text("Pune, Maharashtra"),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () {},
+                        ),
+                        const Divider(),
+                        // Language
+                        ListTile(
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.teal.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.translate_rounded,
+                              color: Colors.teal.shade700,
+                              size: 22,
+                            ),
+                          ),
+                          title: Text(
+                            "Language",
+                            style: theme.textTheme.titleMedium!.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          subtitle: Text(context.locale.languageCode == 'en'
+                              ? 'English'
+                              : context.locale.languageCode == 'hi'
+                                  ? 'हिंदी'
+                                  : 'मराठी'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () {
+                            // Show language selector
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Analytics section with tabs
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12, left: 4),
+                        child: Text(
+                          "Your Analytics",
+                          style: theme.textTheme.titleMedium!.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.teal.shade800,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.1),
+                              blurRadius: 10,
+                              spreadRadius: 0,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            // Tab bar
+                            TabBar(
+                              controller: _tabController,
+                              labelColor: Colors.teal.shade700,
+                              unselectedLabelColor: Colors.grey.shade600,
+                              indicatorColor: Colors.teal.shade700,
+                              indicatorSize: TabBarIndicatorSize.label,
+                              dividerColor: Colors.transparent,
+                              tabs: const [
+                                Tab(text: 'Activity'),
+                                Tab(text: 'Crops'),
+                              ],
+                            ),
+
+                            // Tab content
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 300),
+                              child: [
+                                // Activity chart
+                                Padding(
+                                  key: const ValueKey('activity'),
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "Weekly Activity",
+                                        style: theme.textTheme.titleSmall!
+                                            .copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.grey.shade800,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      SizedBox(
+                                        height: isSmallScreen ? 180 : 220,
+                                        child: _buildActivityChart(context),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                // Crop interest chart
+                                Padding(
+                                  key: const ValueKey('crops'),
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "Crop Interests",
+                                        style: theme.textTheme.titleSmall!
+                                            .copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.grey.shade800,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      SizedBox(
+                                        height: isSmallScreen ? 180 : 220,
+                                        child: _buildCropChart(context),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ][selectedTabIndex],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Recent activity
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12, left: 4),
+                        child: Text(
+                          "Recent Activity",
+                          style: theme.textTheme.titleMedium!.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.teal.shade800,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.1),
+                              blurRadius: 10,
+                              spreadRadius: 0,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            _buildActivityItem(
+                              Icons.question_answer,
+                              Colors.blue,
+                              "Asked about pest control",
+                              "Today, 10:24 AM",
+                            ),
+                            const Divider(height: 1, indent: 56),
+                            _buildActivityItem(
+                              Icons.bar_chart,
+                              Colors.orange,
+                              "Checked wheat market prices",
+                              "Yesterday, 3:45 PM",
+                            ),
+                            const Divider(height: 1, indent: 56),
+                            _buildActivityItem(
+                              Icons.cloud,
+                              Colors.teal,
+                              "Viewed weather forecast",
+                              "08/15, 9:12 AM",
+                            ),
+                            InkWell(
+                              onTap: () {},
+                              borderRadius: const BorderRadius.vertical(
+                                bottom: Radius.circular(16),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Text(
+                                  "View All Activity",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.teal.shade700,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Account actions
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.1),
+                          blurRadius: 10,
+                          spreadRadius: 0,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        ListTile(
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.logout_rounded,
+                              color: Colors.red.shade700,
+                              size: 22,
+                            ),
+                          ),
+                          title: Text(
+                            "Sign Out",
+                            style: theme.textTheme.titleMedium!.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.red.shade800,
+                            ),
+                          ),
+                          onTap: () {},
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+                Text(
+                  "AgriAdvisor v1.0.0",
+                  style: TextStyle(
+                    color: Colors.grey.shade500,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildStatItem(BuildContext context, String value, String label) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.8),
+            fontSize: 12,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActivityItem(
+      IconData icon, Color color, String title, String subtitle) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      leading: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, color: color),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: Text(
+          subtitle,
+          style: TextStyle(
+            color: Colors.grey.shade600,
+            fontSize: 12,
+          ),
+        ),
+      ),
+      onTap: () {},
+    );
+  }
+
+  Widget _buildActivityChart(BuildContext context) {
+    final isSmallScreen = MediaQuery.of(context).size.width < 360;
+
+    return BarChart(
+      BarChartData(
+        alignment: BarChartAlignment.spaceAround,
+        maxY: 10,
+        minY: 0,
+        barGroups: activityData.asMap().entries.map((entry) {
+          final index = entry.key;
+          final data = entry.value;
+          return BarChartGroupData(
+            x: index,
+            barRods: [
+              BarChartRodData(
+                toY: data['value'] as double,
+                width: isSmallScreen ? 12 : 16,
+                color: Colors.teal.shade300,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(6),
+                  topRight: Radius.circular(6),
+                ),
+                backDrawRodData: BackgroundBarChartRodData(
+                  show: true,
+                  toY: 10,
+                  color: Colors.grey.shade100,
+                ),
+              ),
+            ],
+          );
+        }).toList(),
+        titlesData: FlTitlesData(
+          show: true,
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, meta) {
+                if (value >= activityData.length) return const Text('');
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    activityData[value.toInt()]['day'] as String,
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: isSmallScreen ? 10 : 12,
+                    ),
+                  ),
+                );
+              },
+              reservedSize: 30,
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              interval: 2,
+              reservedSize: 30,
+              getTitlesWidget: (value, meta) {
+                if (value == 0) return const Text('');
+                if (value % 2 == 0) {
+                  return Text(
+                    value.toInt().toString(),
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: isSmallScreen ? 10 : 12,
+                    ),
+                  );
+                }
+                return const Text('');
+              },
+            ),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+        ),
+        gridData: FlGridData(
+          show: true,
+          horizontalInterval: 2,
+          getDrawingHorizontalLine: (value) => FlLine(
+            color: Colors.grey.shade200,
+            strokeWidth: 1,
+          ),
+          drawVerticalLine: false,
+        ),
+        borderData: FlBorderData(
+          show: true,
+          border: Border(
+            bottom: BorderSide(color: Colors.grey.shade300),
+            left: BorderSide(color: Colors.grey.shade300),
+          ),
+        ),
+        barTouchData: BarTouchData(
+          touchTooltipData: BarTouchTooltipData(
+            tooltipPadding: const EdgeInsets.all(8),
+            tooltipMargin: 8,
+            getTooltipItem: (group, groupIndex, rod, rodIndex) {
+              final data = activityData[group.x];
+              return BarTooltipItem(
+                '${data['value']} ${data['type']}',
+                const TextStyle(
+                    color: Colors.black87, fontWeight: FontWeight.w500),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCropChart(BuildContext context) {
+    final isSmallScreen = MediaQuery.of(context).size.width < 360;
+
+    return Row(
+      children: [
+        // Pie chart
+        Expanded(
+          flex: 3,
+          child: PieChart(
+            PieChartData(
+              sectionsSpace: 2,
+              centerSpaceRadius: isSmallScreen ? 30 : 40,
+              sections: cropInterests.asMap().entries.map((entry) {
+                final index = entry.key;
+                final data = entry.value;
+
+                final List<Color> colorList = [
+                  Colors.teal.shade300,
+                  Colors.green.shade400,
+                  Colors.blue.shade300,
+                  Colors.amber.shade400,
+                  Colors.orange.shade300,
+                ];
+
+                return PieChartSectionData(
+                  color: colorList[index % colorList.length],
+                  value: data['percentage'] as double,
+                  title: '${data['percentage']}%',
+                  radius: isSmallScreen ? 70 : 80,
+                  titleStyle: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+        // Legend
+        Expanded(
+          flex: 2,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: cropInterests.asMap().entries.map((entry) {
+              final index = entry.key;
+              final data = entry.value;
+
+              final List<Color> colorList = [
+                Colors.teal.shade300,
+                Colors.green.shade400,
+                Colors.blue.shade300,
+                Colors.amber.shade400,
+                Colors.orange.shade300,
+              ];
+
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6.0),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: colorList[index % colorList.length],
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      data['name'] as String,
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 11 : 12,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// Extension to capitalize strings
+extension StringExtension on String {
+  String capitalize() {
+    return "${this[0].toUpperCase()}${substring(1)}";
   }
 }
 
@@ -2798,14 +5164,14 @@ class _AdvancedChatbotScreenState extends State<AdvancedChatbotScreen> {
                   onPressed: () {
                     // TODO: Integrate voice input
                   },
-                  tooltip: 'Voice Input',
+                  tooltip: tr('voice_input'),
                 ),
                 IconButton(
                   icon: Icon(Icons.image, color: Colors.indigo.shade400),
                   onPressed: () {
                     // TODO: Integrate image input
                   },
-                  tooltip: 'Image Input',
+                  tooltip: tr('image_input'),
                 ),
                 Expanded(
                   child: Container(
