@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-
-// NOTE: Material 2 UI (useMaterial3: false).
-// This app is structured for quick demo + easy n8n integration.
-// All n8n calls are shown as commented placeholders in ApiService.
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'dummy_charts.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -114,189 +113,41 @@ class _RootScaffoldState extends State<RootScaffold> {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFF6F7FB), Color(0xFFE3E6F5)],
+    return Scaffold(
+      body: SafeArea(
+        bottom: true,
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+          decoration: BoxDecoration(
+            color: Colors.white.withAlpha((0.97 * 255).toInt()),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.indigo.shade100.withAlpha((0.08 * 255).toInt()),
+                blurRadius: 12,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: _pages[_index],
         ),
       ),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(98),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF4F5BD5), Color(0xFFB3B8F5)],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha((0.07 * 255).toInt()),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(24),
-                bottomRight: Radius.circular(24),
-              ),
-            ),
-            child: SafeArea(
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    CircleAvatar(
-                      radius: 26,
-                      backgroundColor: Colors.indigo.shade100,
-                      child: Icon(Icons.agriculture_rounded,
-                          color: Colors.indigo.shade700, size: 30),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            _greeting(context, app.name),
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium!
-                                .copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.indigo.shade900,
-                                  letterSpacing: 0.2,
-                                ),
-                            overflow: TextOverflow.ellipsis,
-                            softWrap: false,
-                            maxLines: 1,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            tr('app_name'),
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge!
-                                .copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.indigo.shade800,
-                                  letterSpacing: 0.3,
-                                ),
-                            overflow: TextOverflow.ellipsis,
-                            softWrap: false,
-                            maxLines: 1,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    _LangSelector(),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-        body: SafeArea(
-          bottom: true,
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-            decoration: BoxDecoration(
-              color: Colors.white.withAlpha((0.97 * 255).toInt()),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(24),
-                topRight: Radius.circular(24),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.indigo.shade100.withAlpha((0.08 * 255).toInt()),
-                  blurRadius: 12,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                const SizedBox(height: 2),
-                Container(
-                  height: 2,
-                  margin: const EdgeInsets.symmetric(horizontal: 18),
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade100,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        if (app.offline)
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(8),
-                            color: Colors.orange.shade100,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.wifi_off,
-                                    size: 18, color: Colors.orange),
-                                const SizedBox(width: 6),
-                                Text(
-                                  tr('offline'),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium!
-                                      .copyWith(
-                                        fontWeight: FontWeight.w800,
-                                        color: Colors.green.shade900,
-                                        letterSpacing: 0.2,
-                                      ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.85,
-                          child: _pages[_index],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _index,
-          onTap: (i) => setState(() => _index = i),
-          selectedItemColor: Colors.green.shade700,
-          unselectedItemColor: Colors.grey.shade500,
-          type: BottomNavigationBarType.fixed,
-          items: [
-            BottomNavigationBarItem(
-                icon: const Icon(Icons.dashboard_rounded),
-                label: tr('dashboard')),
-            BottomNavigationBarItem(
-                icon: const Icon(Icons.chat_bubble_outline_rounded),
-                label: tr('chat')),
-            BottomNavigationBarItem(
-                icon: const Icon(Icons.currency_rupee_rounded),
-                label: tr('market_prices')),
-            BottomNavigationBarItem(
-                icon: const Icon(Icons.cloud_rounded), label: tr('weather')),
-            BottomNavigationBarItem(
-                icon: const Icon(Icons.person_rounded), label: tr('profile')),
-          ],
-        ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _index,
+        onTap: (i) => setState(() => _index = i),
+        items: const [
+          BottomNavigationBarItem(
+              icon: Icon(Icons.dashboard), label: 'Dashboard'),
+          BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chat'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.show_chart), label: 'Market'),
+          BottomNavigationBarItem(icon: Icon(Icons.cloud), label: 'Weather'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+        ],
+        type: BottomNavigationBarType.fixed,
       ),
     );
   }
@@ -661,7 +512,7 @@ class QuickActionsRow extends StatelessWidget {
 
 // --- Pest & Disease Alerts Screen (ensure defined) ---
 class PestDiseaseAlertsScreen extends StatelessWidget {
-  const PestDiseaseAlertsScreen({Key? key}) : super(key: key);
+  const PestDiseaseAlertsScreen({super.key});
   @override
   Widget build(BuildContext context) {
     // You can use your existing _dummyAlerts and _PestAlertCard here
@@ -676,7 +527,7 @@ class PestDiseaseAlertsScreen extends StatelessWidget {
                 style: const TextStyle(fontWeight: FontWeight.w700)),
           ],
         ),
-        backgroundColor: Colors.white.withOpacity(0.95),
+        backgroundColor: Colors.white.withAlpha((0.95 * 255).toInt()),
         elevation: 0,
       ),
       body: ListView.builder(
@@ -690,7 +541,7 @@ class PestDiseaseAlertsScreen extends StatelessWidget {
 
 // --- Officer & Ministry Dashboard Screen (full definition) ---
 class OfficerMinistryDashboardScreen extends StatefulWidget {
-  const OfficerMinistryDashboardScreen({Key? key}) : super(key: key);
+  const OfficerMinistryDashboardScreen({super.key});
   @override
   State<OfficerMinistryDashboardScreen> createState() =>
       _OfficerMinistryDashboardScreenState();
@@ -748,110 +599,142 @@ class _OfficerMinistryDashboardScreenState
           // Analytics
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    DropdownButton<String>(
-                      value: selectedCrop,
-                      items: crops
-                          .map(
-                              (c) => DropdownMenuItem(value: c, child: Text(c)))
-                          .toList(),
-                      onChanged: (v) => setState(() => selectedCrop = v!),
-                    ),
-                    const SizedBox(width: 12),
-                    DropdownButton<String>(
-                      value: selectedRegion,
-                      items: regions
-                          .map(
-                              (r) => DropdownMenuItem(value: r, child: Text(r)))
-                          .toList(),
-                      onChanged: (v) => setState(() => selectedRegion = v!),
-                    ),
-                    const SizedBox(width: 12),
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.date_range),
-                      label: const Text('Date Range'),
-                      onPressed: () async {
-                        final picked = await showDateRangePicker(
-                          context: context,
-                          firstDate: DateTime(2023, 1, 1),
-                          lastDate: DateTime.now(),
-                        );
-                        if (picked != null)
-                          setState(() => selectedRange = picked);
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                Card(
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
-                  elevation: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Average Yield (${selectedRegion})',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium!
-                                .copyWith(fontWeight: FontWeight.w800)),
-                        const SizedBox(height: 8),
-                        Text('3.8 tons/ha',
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w700, fontSize: 18)),
-                      ],
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ...existing code for analytics cards...
+                  Row(
+                    children: [
+                      DropdownButton<String>(
+                        value: selectedCrop,
+                        items: crops
+                            .map((c) =>
+                                DropdownMenuItem(value: c, child: Text(c)))
+                            .toList(),
+                        onChanged: (v) => setState(() => selectedCrop = v!),
+                      ),
+                      const SizedBox(width: 12),
+                      DropdownButton<String>(
+                        value: selectedRegion,
+                        items: regions
+                            .map((r) =>
+                                DropdownMenuItem(value: r, child: Text(r)))
+                            .toList(),
+                        onChanged: (v) => setState(() => selectedRegion = v!),
+                      ),
+                      const SizedBox(width: 12),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.date_range),
+                        label: const Text('Date Range'),
+                        onPressed: () async {
+                          final picked = await showDateRangePicker(
+                            context: context,
+                            firstDate: DateTime(2023, 1, 1),
+                            lastDate: DateTime.now(),
+                          );
+                          if (picked != null) {
+                            setState(() => selectedRange = picked);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  Card(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                    elevation: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Annual Rainfall ($selectedRegion)',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium!
+                                  .copyWith(fontWeight: FontWeight.w800)),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            height: 120,
+                            child: RainfallBarChart(region: selectedRegion),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 14),
-                Card(
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
-                  elevation: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Market Price Trends',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium!
-                                .copyWith(fontWeight: FontWeight.w800)),
-                        const SizedBox(height: 8),
-                        SizedBox(height: 120, child: _DummyOfficerLineChart()),
-                      ],
+                  const SizedBox(height: 14),
+                  Card(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                    elevation: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Crop Impact by Rainfall',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium!
+                                  .copyWith(fontWeight: FontWeight.w800)),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            height: 120,
+                            child: CropImpactLineChart(
+                              crop: selectedCrop,
+                              region: selectedRegion,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 14),
-                Card(
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
-                  elevation: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Irrigation Requirement Heatmap',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium!
-                                .copyWith(fontWeight: FontWeight.w800)),
-                        const SizedBox(height: 8),
-                        SizedBox(height: 80, child: _DummyHeatmap()),
-                      ],
+                  const SizedBox(height: 14),
+                  Card(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                    elevation: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Market Price Trends',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium!
+                                  .copyWith(fontWeight: FontWeight.w800)),
+                          const SizedBox(height: 8),
+                          SizedBox(height: 120, child: DummyOfficerLineChart()),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 14),
+                  Card(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                    elevation: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Irrigation Requirement Heatmap',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium!
+                                  .copyWith(fontWeight: FontWeight.w800)),
+                          const SizedBox(height: 8),
+                          SizedBox(height: 80, child: _DummyHeatmap()),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -861,25 +744,61 @@ class _OfficerMinistryDashboardScreenState
 }
 
 class _OfficerMapView extends StatelessWidget {
+  final Map<String, LatLng> regionCoords = const {
+    'Pune': LatLng(18.5204, 73.8567),
+    'Nashik': LatLng(19.9975, 73.7898),
+    'Nagpur': LatLng(21.1458, 79.0882),
+    'Kolhapur': LatLng(16.7050, 74.2433),
+  };
+
   @override
   Widget build(BuildContext context) {
-    // TODO: Replace with Google Maps widget and real markers
+    final _OfficerMinistryDashboardScreenState? parent =
+        context.findAncestorStateOfType<_OfficerMinistryDashboardScreenState>();
+    final selectedRegion = parent?.selectedRegion ?? 'Pune';
+    final LatLng center = regionCoords[selectedRegion] ?? regionCoords['Pune']!;
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
+          SizedBox(
             height: 220,
-            decoration: BoxDecoration(
-              color: Colors.indigo.shade50,
+            child: ClipRRect(
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: Colors.indigo.shade100),
-            ),
-            child: Center(
-              child: Text('Map Placeholder\n(Pest, Weather, Market Markers)',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.indigo.shade400)),
+              child: Builder(
+                builder: (context) {
+                  try {
+                    return GoogleMap(
+                      initialCameraPosition: CameraPosition(
+                        target: center,
+                        zoom: 9,
+                      ),
+                      markers: {
+                        Marker(
+                          markerId: const MarkerId('region'),
+                          position: center,
+                          infoWindow: InfoWindow(title: selectedRegion),
+                        ),
+                        // Add more markers for pest/weather/market as needed
+                      },
+                      myLocationButtonEnabled: false,
+                      zoomControlsEnabled: true,
+                    );
+                  } catch (e) {
+                    return Container(
+                      color: Colors.grey.shade200,
+                      child: Center(
+                        child: Text(
+                          'Map could not be loaded.\nCheck API key, permissions, or platform support.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.red.shade400),
+                        ),
+                      ),
+                    );
+                  }
+                },
+              ),
             ),
           ),
           const SizedBox(height: 18),
@@ -908,6 +827,181 @@ class _OfficerMapView extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+// --- Rainfall Bar Chart Widget ---
+class RainfallBarChart extends StatelessWidget {
+  final String region;
+  const RainfallBarChart({super.key, required this.region});
+
+  // Dummy rainfall data (mm) for 12 months
+  final Map<String, List<double>> rainfallData = const {
+    'Pune': [10, 20, 30, 80, 120, 180, 200, 170, 120, 60, 20, 10],
+    'Nashik': [15, 25, 40, 90, 130, 190, 210, 180, 130, 70, 25, 15],
+    'Nagpur': [12, 22, 35, 85, 125, 185, 205, 175, 125, 65, 22, 12],
+    'Kolhapur': [18, 28, 45, 95, 140, 200, 220, 190, 140, 80, 28, 18],
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final data = rainfallData[region] ?? rainfallData['Pune']!;
+    return BarChart(
+      BarChartData(
+        alignment: BarChartAlignment.spaceAround,
+        titlesData: FlTitlesData(
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(showTitles: true, reservedSize: 28),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, meta) {
+                const months = [
+                  'J',
+                  'F',
+                  'M',
+                  'A',
+                  'M',
+                  'J',
+                  'J',
+                  'A',
+                  'S',
+                  'O',
+                  'N',
+                  'D'
+                ];
+                return Text(months[value.toInt() % 12]);
+              },
+              reservedSize: 18,
+            ),
+          ),
+        ),
+        borderData: FlBorderData(show: false),
+        barGroups: List.generate(
+          12,
+          (i) => BarChartGroupData(
+            x: i,
+            barRods: [
+              BarChartRodData(
+                toY: data[i],
+                color: Colors.blue.shade400,
+                width: 12,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ],
+          ),
+        ),
+        gridData: FlGridData(show: false),
+      ),
+    );
+  }
+}
+
+// --- Crop Impact Line Chart Widget ---
+class CropImpactLineChart extends StatelessWidget {
+  final String crop;
+  final String region;
+  const CropImpactLineChart(
+      {super.key, required this.crop, required this.region});
+
+  // Dummy crop impact data: yield (tons/ha) vs rainfall (mm)
+  final Map<String, List<double>> cropImpact = const {
+    'Wheat': [2.5, 2.8, 3.0, 3.2, 3.5, 3.8, 4.0, 3.9, 3.7, 3.4, 3.0, 2.7],
+    'Rice': [2.0, 2.3, 2.7, 3.0, 3.4, 3.9, 4.2, 4.1, 3.8, 3.3, 2.8, 2.3],
+    'Maize': [1.8, 2.0, 2.3, 2.7, 3.0, 3.4, 3.7, 3.6, 3.3, 2.9, 2.4, 2.0],
+    'Soybean': [1.5, 1.7, 2.0, 2.3, 2.7, 3.1, 3.4, 3.3, 3.0, 2.6, 2.1, 1.7],
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final data = cropImpact[crop] ?? cropImpact['Wheat']!;
+    return LineChart(
+      LineChartData(
+        minY: (data.reduce((a, b) => a < b ? a : b) * 0.9),
+        maxY: (data.reduce((a, b) => a > b ? a : b) * 1.1),
+        titlesData: FlTitlesData(
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 32,
+                getTitlesWidget: (value, meta) {
+                  if (value % 1 == 0) return Text(value.toStringAsFixed(1));
+                  return const SizedBox.shrink();
+                }),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, meta) {
+                const months = [
+                  'J',
+                  'F',
+                  'M',
+                  'A',
+                  'M',
+                  'J',
+                  'J',
+                  'A',
+                  'S',
+                  'O',
+                  'N',
+                  'D'
+                ];
+                return Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(months[value.toInt() % 12],
+                      style: const TextStyle(fontWeight: FontWeight.w600)),
+                );
+              },
+              reservedSize: 22,
+            ),
+          ),
+          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        borderData: FlBorderData(
+            show: true, border: Border.all(color: Colors.green.shade100)),
+        lineBarsData: [
+          LineChartBarData(
+            spots: List.generate(12, (i) => FlSpot(i.toDouble(), data[i])),
+            isCurved: true,
+            color: Colors.green.shade600,
+            barWidth: 4,
+            belowBarData: BarAreaData(
+                show: true,
+                gradient: LinearGradient(
+                    colors: [Colors.green.shade100, Colors.green.shade50])),
+            dotData: FlDotData(
+                show: true,
+                getDotPainter: (spot, percent, bar, index) =>
+                    FlDotCirclePainter(
+                        radius: 4,
+                        color: Colors.green.shade700,
+                        strokeWidth: 1.5,
+                        strokeColor: Colors.white)),
+          ),
+        ],
+        gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            horizontalInterval: 0.5,
+            getDrawingHorizontalLine: (value) =>
+                FlLine(color: Colors.green.shade50, strokeWidth: 1)),
+        lineTouchData: LineTouchData(
+          enabled: true,
+          touchTooltipData: LineTouchTooltipData(
+            getTooltipItems: (touchedSpots) => touchedSpots
+                .map((spot) => LineTooltipItem(
+                      '${spot.y.toStringAsFixed(2)} t/ha',
+                      const TextStyle(
+                          color: Colors.green, fontWeight: FontWeight.bold),
+                    ))
+                .toList(),
+          ),
+        ),
       ),
     );
   }
@@ -992,7 +1086,7 @@ class _PestAlertCard extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: riskColor.withOpacity(0.13),
+                              color: riskColor.withAlpha((0.13 * 255).toInt()),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
@@ -1156,7 +1250,8 @@ class _ChatScreenState extends State<ChatScreen> {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.indigo.shade100.withOpacity(0.10),
+                            color: Colors.indigo.shade100
+                                .withAlpha((0.10 * 255).toInt()),
                             blurRadius: 6,
                             offset: const Offset(0, 2),
                           ),
@@ -1293,7 +1388,7 @@ class WeatherForecastCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.shade100.withOpacity(0.18),
+            color: Colors.blue.shade100.withAlpha((0.18 * 255).toInt()),
             blurRadius: 14,
             offset: Offset(0, 6),
           ),
@@ -1325,7 +1420,7 @@ class WeatherForecastCard extends StatelessWidget {
                 return Container(
                   width: 70,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.85),
+                    color: Colors.white.withAlpha((0.85 * 255).toInt()),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: Colors.blue.shade100),
                   ),
@@ -1444,41 +1539,35 @@ class _MarketPriceTrackerScreenState extends State<MarketPriceTrackerScreen> {
   final List<String> crops = ['Wheat', 'Rice', 'Maize', 'Soybean'];
   final List<String> locations = ['Pune', 'Mumbai', 'Nagpur', 'Nashik'];
 
-  List<Map<String, dynamic>> get priceData7d => List.generate(7, (i) {
-        final d = DateTime.now().subtract(Duration(days: 6 - i));
+  // Dummy price data for 7 days
+  List<Map<String, dynamic>> get data => List.generate(7, (i) {
+        final date = DateTime.now().subtract(Duration(days: 6 - i));
+        // Dummy prices
+        final min = 1900 + i * 10;
+        final max = 2000 + i * 10;
+        final modal = 1950 + i * 10;
         return {
-          'date': d,
-          'min': 1800 + (i % 7) * 10,
-          'max': 2100 + (i % 7) * 12,
-          'modal': 1950 + (i % 7) * 11,
-        };
-      });
-
-  List<Map<String, dynamic>> get priceData30d => List.generate(30, (i) {
-        final d = DateTime.now().subtract(Duration(days: 29 - i));
-        return {
-          'date': d,
-          'min': 1800 + (i % 7) * 10,
-          'max': 2100 + (i % 7) * 12,
-          'modal': 1950 + (i % 7) * 11,
+          'date': date,
+          'min': min.toDouble(),
+          'max': max.toDouble(),
+          'modal': modal.toDouble(),
         };
       });
 
   @override
   Widget build(BuildContext context) {
-    final data = trendType == '7-day' ? priceData7d : priceData30d;
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.white.withAlpha((0.95 * 255).toInt()),
+        elevation: 0,
         title: Row(
           children: [
             Icon(Icons.currency_rupee_rounded, color: Colors.indigo.shade700),
             const SizedBox(width: 10),
-            Text(tr('market_prices'),
+            Text('Market Price Tracker',
                 style: const TextStyle(fontWeight: FontWeight.w700)),
           ],
         ),
-        backgroundColor: Colors.white.withOpacity(0.95),
-        elevation: 0,
       ),
       body: ListView(
         padding: const EdgeInsets.all(14),
@@ -1519,36 +1608,44 @@ class _MarketPriceTrackerScreenState extends State<MarketPriceTrackerScreen> {
                   onChanged: (v) => setState(() => selectedLocation = v!),
                 ),
               ),
+              const SizedBox(width: 12),
+              DropdownButton<String>(
+                value: trendType,
+                items: ['7-day', '30-day']
+                    .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                    .toList(),
+                onChanged: (v) => setState(() => trendType = v!),
+              ),
             ],
           ),
           const SizedBox(height: 18),
-          // Recommendation card
           Card(
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
             elevation: 2,
             child: Padding(
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.lightbulb, color: Colors.indigo.shade400),
+                      Icon(Icons.show_chart, color: Colors.indigo.shade700),
                       const SizedBox(width: 10),
-                      Text('Recommendation: Hold',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              color: Colors.indigo.shade900)),
+                      Text('Price Trend',
+                          style: const TextStyle(fontWeight: FontWeight.w700)),
                       const Spacer(),
                       TextButton.icon(
                         icon: Icon(
-                            showWhy ? Icons.expand_less : Icons.info_outline,
-                            color: Colors.indigo.shade700),
-                        label: Text('Why?',
-                            style: TextStyle(
-                                color: Colors.indigo.shade800,
-                                fontWeight: FontWeight.w700)),
+                          showWhy ? Icons.expand_less : Icons.info_outline,
+                          color: Colors.indigo.shade700,
+                        ),
+                        label: Text(
+                          'Why?',
+                          style: TextStyle(
+                              color: Colors.indigo.shade700,
+                              fontWeight: FontWeight.w700),
+                        ),
                         onPressed: () => setState(() => showWhy = !showWhy),
                         style: TextButton.styleFrom(
                           backgroundColor: Colors.indigo.shade50,
@@ -1557,6 +1654,10 @@ class _MarketPriceTrackerScreenState extends State<MarketPriceTrackerScreen> {
                         ),
                       ),
                     ],
+                  ),
+                  SizedBox(
+                    height: 120,
+                    child: DummyInteractiveLineChart(data: data),
                   ),
                   AnimatedCrossFade(
                     crossFadeState: showWhy
@@ -1614,64 +1715,8 @@ class _MarketPriceTrackerScreenState extends State<MarketPriceTrackerScreen> {
   }
 }
 
-class _DummyOfficerLineChart extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Placeholder();
-  }
-}
-
-// Move these classes to the top-level (outside of any other class):
-
-class _DummyInteractiveLineChart extends StatelessWidget {
-  final List<Map<String, dynamic>> data;
-  const _DummyInteractiveLineChart({required this.data});
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onScaleUpdate: (details) {}, // Placeholder for pinch zoom
-      child: CustomPaint(
-        painter: _LineChartPainter(data),
-        child: const SizedBox.expand(),
-      ),
-    );
-  }
-}
-
-class _LineChartPainter extends CustomPainter {
-  final List<Map<String, dynamic>> data;
-  _LineChartPainter(this.data);
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paintLine = Paint()
-      ..color = Colors.indigo.shade400
-      ..strokeWidth = 2.5
-      ..style = PaintingStyle.stroke;
-    final paintGrid = Paint()
-      ..color = Colors.indigo.shade100
-      ..strokeWidth = 1;
-    // Draw grid
-    for (var i = 1; i < 4; i++) {
-      final y = size.height * i / 4;
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paintGrid);
-    }
-    // Draw line
-    final points = List.generate(data.length, (i) {
-      final x = size.width * i / (data.length - 1);
-      final y = size.height * (1 - ((data[i]['modal'] - 1950) / 100));
-      return Offset(x, y);
-    });
-    final path = Path();
-    path.moveTo(points.first.dx, points.first.dy);
-    for (final p in points.skip(1)) {
-      path.lineTo(p.dx, p.dy);
-    }
-    canvas.drawPath(path, paintLine);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
+// ...existing code...
+// ...existing code...
 
 class WeatherScreen extends StatelessWidget {
   const WeatherScreen({super.key});
@@ -2033,8 +2078,8 @@ class _SchemesFinanceNavigatorScreenState
                                                     BorderRadius.circular(12)),
                                           ),
                                           onPressed: () {
-                                            // TODO: Open link or call API
-                                            // launch(s['apply']!);
+                                            // You can open the link using url_launcher if needed
+                                            // launchUrl(Uri.parse(s['apply']!));
                                           },
                                         ),
                                       ],
@@ -2068,7 +2113,6 @@ class _SchemesFinanceNavigatorScreenState
                             trailing: IconButton(
                               icon: const Icon(Icons.phone),
                               onPressed: () {
-                                // TODO: Call branch
                                 // launch('tel:${l['contact']}');
                               },
                             ),
@@ -2329,13 +2373,6 @@ class _ChatMessageBubble extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: bg,
             borderRadius: radius,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.indigo.shade100.withAlpha((0.13 * 255).toInt()),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
           ),
           child: Column(
             crossAxisAlignment: align,
@@ -2400,13 +2437,19 @@ class _QuickAction extends StatelessWidget {
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 26, color: Colors.green.shade700),
-            const SizedBox(height: 10),
-            Text(tr(labelKey),
-                textAlign: TextAlign.center,
-                style:
-                    const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+            Icon(icon, size: 32, color: Colors.green.shade700),
+            const SizedBox(height: 8),
+            Text(
+              labelKey,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.green.shade900,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
           ],
         ),
       ),
