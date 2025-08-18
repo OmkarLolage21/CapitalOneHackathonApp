@@ -4,6 +4,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter_vector_icons/flutter_vector_icons.dart';
+import 'theme/app_theme.dart';
 import 'dummy_charts.dart';
 
 void main() async {
@@ -53,37 +55,9 @@ class AgriAdvisorApp extends StatelessWidget {
     return MaterialApp(
       title: tr('app_name'),
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.indigo,
-        brightness: Brightness.light,
-        scaffoldBackgroundColor: const Color(0xFFF6F7FB),
-        appBarTheme: const AppBarTheme(
-          elevation: 0,
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black87,
-          iconTheme: IconThemeData(color: Colors.black87),
-        ),
-        cardTheme: CardTheme(
-          color: Colors.white,
-          elevation: 1.5,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-        ),
-        chipTheme: ChipThemeData(
-          backgroundColor: Colors.indigo.shade50,
-          labelStyle: const TextStyle(color: Colors.indigo),
-          shape: StadiumBorder(side: BorderSide(color: Color(0xFFB3B8F5))),
-        ),
-        textTheme: const TextTheme(
-          titleLarge: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
-          titleMedium: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-          titleSmall: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-          bodyLarge: TextStyle(fontSize: 16),
-          bodyMedium: TextStyle(fontSize: 14),
-          labelLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
-      ),
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: ThemeMode.light,
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
       locale: context.locale,
@@ -99,8 +73,10 @@ class RootScaffold extends StatefulWidget {
   State<RootScaffold> createState() => _RootScaffoldState();
 }
 
-class _RootScaffoldState extends State<RootScaffold> {
+class _RootScaffoldState extends State<RootScaffold>
+    with SingleTickerProviderStateMixin {
   int _index = 0;
+  late AnimationController _animationController;
 
   final _pages = [
     const DashboardScreen(),
@@ -111,43 +87,131 @@ class _RootScaffoldState extends State<RootScaffold> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
+    final theme = Theme.of(context);
+
     return Scaffold(
-      body: SafeArea(
-        bottom: true,
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-          decoration: BoxDecoration(
-            color: Colors.white.withAlpha((0.97 * 255).toInt()),
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(24),
-              topRight: Radius.circular(24),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.indigo.shade100.withAlpha((0.08 * 255).toInt()),
-                blurRadius: 12,
-                offset: const Offset(0, 2),
-              ),
-            ],
+      body: FadeTransition(
+        opacity: Tween<double>(begin: 0.7, end: 1.0).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeInOut,
           ),
-          child: _pages[_index],
+        ),
+        child: SafeArea(
+          bottom: true,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return Container(
+                margin: const EdgeInsets.only(top: 4),
+                decoration: BoxDecoration(
+                  color: theme.cardTheme.color,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 16,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
+                  ),
+                  child: _pages[_index],
+                ),
+              );
+            },
+          ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _index,
-        onTap: (i) => setState(() => _index = i),
-        items: const [
-          BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard), label: 'Dashboard'),
-          BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chat'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.show_chart), label: 'Market'),
-          BottomNavigationBarItem(icon: Icon(Icons.cloud), label: 'Weather'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-        ],
-        type: BottomNavigationBarType.fixed,
+      extendBody: true,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 8,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+          child: BottomNavigationBar(
+            currentIndex: _index,
+            onTap: (i) {
+              if (_index != i) {
+                setState(() => _index = i);
+                _animationController.reset();
+                _animationController.forward();
+              }
+            },
+            elevation: 16,
+            items: [
+              BottomNavigationBarItem(
+                icon: Icon(_index == 0
+                    ? MaterialCommunityIcons.view_dashboard
+                    : MaterialCommunityIcons.view_dashboard_outline),
+                label: 'Dashboard',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(_index == 1
+                    ? MaterialCommunityIcons.chat
+                    : MaterialCommunityIcons.chat_outline),
+                label: 'Chat',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(_index == 2
+                    ? MaterialCommunityIcons.chart_line
+                    : MaterialCommunityIcons.chart_line_variant),
+                label: 'Market',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(_index == 3
+                    ? MaterialCommunityIcons.weather_partly_cloudy
+                    : MaterialCommunityIcons.weather_partly_cloudy),
+                label: 'Weather',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(_index == 4
+                    ? MaterialCommunityIcons.account
+                    : MaterialCommunityIcons.account_outline),
+                label: 'Profile',
+              ),
+            ],
+            selectedFontSize: 12,
+            unselectedFontSize: 12,
+            showSelectedLabels: true,
+            showUnselectedLabels: true,
+            type: BottomNavigationBarType.fixed,
+          ),
+        ),
       ),
     );
   }
@@ -285,30 +349,47 @@ class _InfoBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Colors.green.shade50, Colors.green.shade100],
+          colors: [
+            Colors.green.shade50,
+            Colors.green.shade100.withOpacity(0.6)
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.green.shade100),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.green.shade100.withAlpha((0.13 * 255).toInt()),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+            color: Colors.green.shade100.withOpacity(0.5),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
-      child: Row(children: [
-        Icon(icon, size: 17, color: Colors.green.shade700),
-        const SizedBox(width: 7),
-        Text(label,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.7),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 18, color: Colors.green.shade700),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            label,
             style: TextStyle(
-                color: Colors.green.shade800, fontWeight: FontWeight.w700)),
-      ]),
+              color: Colors.green.shade800,
+              fontWeight: FontWeight.w700,
+              fontSize: 16,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -332,116 +413,229 @@ class AdvisoryCard extends StatefulWidget {
   State<AdvisoryCard> createState() => _AdvisoryCardState();
 }
 
-class _AdvisoryCardState extends State<AdvisoryCard> {
+class _AdvisoryCardState extends State<AdvisoryCard>
+    with SingleTickerProviderStateMixin {
   bool expanded = false;
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _animation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    );
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFe0ffe7), Color(0xFFf7faf7)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.green.shade100.withAlpha((0.18 * 255).toInt()),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [Colors.green.shade100, Colors.green.shade300],
-                    ),
-                  ),
-                  padding: const EdgeInsets.all(8),
-                  child: Icon(Icons.agriculture_rounded,
-                      color: Colors.green.shade700, size: 28),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(widget.title,
-                      style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: Colors.green.shade900,
-                            letterSpacing: 0.2,
-                          )),
-                ),
-                Wrap(spacing: 8, children: widget.badges),
-              ],
+    final theme = Theme.of(context);
+    final isSmallScreen = MediaQuery.of(context).size.width < 360;
+
+    return ScaleTransition(
+      scale: Tween<double>(begin: 0.95, end: 1.0).animate(_animation),
+      child: FadeTransition(
+        opacity: Tween<double>(begin: 0.0, end: 1.0).animate(_animation),
+        child: Container(
+          margin: EdgeInsets.symmetric(
+              horizontal: isSmallScreen ? 12 : 16,
+              vertical: isSmallScreen ? 8 : 10),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.green.shade50, Colors.white],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            const SizedBox(height: 14),
-            Text(
-              widget.content,
-              style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                    fontSize: 17,
-                    color: Colors.green.shade800,
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-            const SizedBox(height: 10),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.green.shade800,
-                  backgroundColor: Colors.green.shade50,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                ),
-                onPressed: () => setState(() => expanded = !expanded),
-                icon: Icon(expanded ? Icons.expand_less : Icons.info_outline,
-                    color: Colors.green.shade700),
-                label: Text(tr('why'),
-                    style: TextStyle(
-                        color: Colors.green.shade800,
-                        fontWeight: FontWeight.w700)),
+            borderRadius: BorderRadius.circular(isSmallScreen ? 20 : 24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
               ),
-            ),
-            AnimatedCrossFade(
-              crossFadeState: expanded
-                  ? CrossFadeState.showFirst
-                  : CrossFadeState.showSecond,
-              duration: const Duration(milliseconds: 220),
-              firstChild: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.green.shade50, Colors.green.shade100],
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.green.shade100),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            ],
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(isSmallScreen ? 16 : 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Text(widget.reasoningTitle,
-                        style: const TextStyle(fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 6),
-                    Text(widget.reasoningBody),
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.green.shade400,
+                            Colors.green.shade600
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.green.shade500.withOpacity(0.25),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      padding: EdgeInsets.all(isSmallScreen ? 10 : 12),
+                      child: Icon(MaterialCommunityIcons.sprout,
+                          color: Colors.white, size: isSmallScreen ? 24 : 28),
+                    ),
+                    SizedBox(width: isSmallScreen ? 12 : 16),
+                    Expanded(
+                      child: Text(
+                        widget.title,
+                        style: theme.textTheme.titleLarge!.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: Colors.green.shade900,
+                          letterSpacing: 0.3,
+                          fontSize: isSmallScreen ? 18 : null,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
-              ),
-              secondChild: const SizedBox.shrink(),
+                SizedBox(height: isSmallScreen ? 16 : 20),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: widget.badges,
+                  ),
+                ),
+                SizedBox(height: isSmallScreen ? 16 : 20),
+                Container(
+                  padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50.withOpacity(0.6),
+                    borderRadius:
+                        BorderRadius.circular(isSmallScreen ? 14 : 16),
+                  ),
+                  child: Text(
+                    widget.content,
+                    style: theme.textTheme.bodyLarge!.copyWith(
+                      fontSize: isSmallScreen ? 15 : 17,
+                      color: Colors.green.shade800,
+                      fontWeight: FontWeight.w500,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+                SizedBox(height: isSmallScreen ? 12 : 16),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.green.shade800,
+                      padding: EdgeInsets.symmetric(
+                          horizontal: isSmallScreen ? 14 : 18,
+                          vertical: isSmallScreen ? 8 : 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () {
+                      setState(() => expanded = !expanded);
+                    },
+                    icon: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      switchInCurve: Curves.easeInOut,
+                      switchOutCurve: Curves.easeInOut,
+                      transitionBuilder:
+                          (Widget child, Animation<double> animation) {
+                        return ScaleTransition(scale: animation, child: child);
+                      },
+                      child: Icon(
+                        expanded
+                            ? MaterialCommunityIcons.chevron_up
+                            : MaterialCommunityIcons.information_outline,
+                        key: ValueKey<bool>(expanded),
+                        color: Colors.green.shade700,
+                        size: isSmallScreen ? 18 : 20,
+                      ),
+                    ),
+                    label: Text(
+                      tr('why'),
+                      style: TextStyle(
+                        color: Colors.green.shade800,
+                        fontWeight: FontWeight.w600,
+                        fontSize: isSmallScreen ? 13 : 14,
+                      ),
+                    ),
+                  ),
+                ),
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  child: expanded
+                      ? Container(
+                          width: double.infinity,
+                          margin: EdgeInsets.only(top: isSmallScreen ? 12 : 16),
+                          padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.green.shade50,
+                                Colors.green.shade100.withOpacity(0.3),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius:
+                                BorderRadius.circular(isSmallScreen ? 14 : 16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.green.shade100.withOpacity(0.2),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.reasoningTitle,
+                                style: theme.textTheme.titleMedium!.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.green.shade900,
+                                  fontSize: isSmallScreen ? 14 : null,
+                                ),
+                              ),
+                              SizedBox(height: isSmallScreen ? 8 : 12),
+                              Text(
+                                widget.reasoningBody,
+                                style: theme.textTheme.bodyMedium!.copyWith(
+                                  color: Colors.green.shade800,
+                                  height: 1.5,
+                                  fontSize: isSmallScreen ? 13 : null,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -454,53 +648,87 @@ class QuickActionsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+    final theme = Theme.of(context);
+    final isSmallScreen = MediaQuery.of(context).size.width < 360;
+
+    return Container(
+      margin: EdgeInsets.symmetric(
+          horizontal: isSmallScreen ? 12 : 16,
+          vertical: isSmallScreen ? 10 : 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(tr('quick_actions'),
-              style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: Colors.green.shade900,
-                    letterSpacing: 0.2,
-                  )),
-          const SizedBox(height: 10),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
+          Row(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
+                child: Icon(
+                  MaterialCommunityIcons.lightning_bolt,
+                  color: AppTheme.primaryColor,
+                  size: isSmallScreen ? 18 : 20,
+                ),
+              ),
+              SizedBox(width: isSmallScreen ? 8 : 12),
+              Text(
+                tr('quick_actions'),
+                style: theme.textTheme.titleMedium!.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: theme.colorScheme.primary,
+                  letterSpacing: 0.2,
+                  fontSize: isSmallScreen ? 14 : null,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: isSmallScreen ? 12 : 16),
+          SizedBox(
+            height: isSmallScreen ? 105 : 115,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 2 : 4),
               children: [
                 _QuickAction(
-                    icon: Icons.chat_bubble_outline,
-                    labelKey: 'ask_question',
-                    routeBuilder: () => const AdvancedChatbotScreen()),
-                const SizedBox(width: 12),
+                  icon: MaterialCommunityIcons.message_text_outline,
+                  labelKey: tr('ask_question'),
+                  routeBuilder: () => const AdvancedChatbotScreen(),
+                  color: Colors.blueAccent,
+                ),
                 _QuickAction(
-                    icon: Icons.currency_rupee,
-                    labelKey: 'market_prices',
-                    routeBuilder: () => MarketPriceTrackerScreen()),
-                const SizedBox(width: 12),
+                  icon: MaterialCommunityIcons.currency_inr,
+                  labelKey: tr('market_prices'),
+                  routeBuilder: () => MarketPriceTrackerScreen(),
+                  color: Colors.orangeAccent,
+                ),
                 _QuickAction(
-                    icon: Icons.cloud,
-                    labelKey: 'weather',
-                    routeBuilder: () => WeatherScreen()),
-                const SizedBox(width: 12),
+                  icon: MaterialCommunityIcons.weather_partly_cloudy,
+                  labelKey: tr('weather'),
+                  routeBuilder: () => const WeatherScreen(),
+                  color: Colors.blueGrey,
+                ),
                 _QuickAction(
-                    icon: Icons.account_balance,
-                    labelKey: 'schemes_loans',
-                    routeBuilder: () => SchemesFinanceNavigatorScreen()),
-                const SizedBox(width: 12),
+                  icon: MaterialCommunityIcons.bank,
+                  labelKey: tr('schemes_loans'),
+                  routeBuilder: () => SchemesFinanceNavigatorScreen(),
+                  color: Colors.teal,
+                ),
                 _QuickAction(
-                    icon: Icons.warning_amber_rounded,
-                    labelKey: 'pest_alerts',
-                    routeBuilder: () => PestDiseaseAlertsScreen()),
-                if (app.role == 'officer' || app.role == 'ministry') ...[
-                  const SizedBox(width: 12),
+                  icon: MaterialCommunityIcons.alert_circle_outline,
+                  labelKey: tr('pest_alerts'),
+                  routeBuilder: () => const PestDiseaseAlertsScreen(),
+                  color: Colors.redAccent,
+                ),
+                if (app.role == 'officer' || app.role == 'ministry')
                   _QuickAction(
-                      icon: Icons.analytics,
-                      labelKey: 'ministry_dashboard',
-                      routeBuilder: () => OfficerMinistryDashboardScreen()),
-                ],
+                    icon: MaterialCommunityIcons.chart_bar,
+                    labelKey: isSmallScreen ? tr('dash') : tr('ministry'),
+                    routeBuilder: () => const OfficerMinistryDashboardScreen(),
+                    color: Colors.purple,
+                  ),
               ],
             ),
           ),
@@ -1367,88 +1595,233 @@ class WeatherForecastCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isSmallScreen = MediaQuery.of(context).size.width < 360;
+
     final week = [
-      {'day': 'Mon', 'icon': Icons.wb_sunny, 'temp': '32°C', 'rain': '10%'},
-      {'day': 'Tue', 'icon': Icons.cloud, 'temp': '30°C', 'rain': '20%'},
-      {'day': 'Wed', 'icon': Icons.grain, 'temp': '29°C', 'rain': '40%'},
-      {'day': 'Thu', 'icon': Icons.wb_cloudy, 'temp': '28°C', 'rain': '60%'},
-      {'day': 'Fri', 'icon': Icons.wb_sunny, 'temp': '31°C', 'rain': '15%'},
-      {'day': 'Sat', 'icon': Icons.cloud, 'temp': '30°C', 'rain': '25%'},
-      {'day': 'Sun', 'icon': Icons.grain, 'temp': '27°C', 'rain': '50%'},
+      {
+        'day': 'Mon',
+        'icon': MaterialCommunityIcons.weather_sunny,
+        'temp': '32°C',
+        'rain': '10%'
+      },
+      {
+        'day': 'Tue',
+        'icon': MaterialCommunityIcons.weather_partly_cloudy,
+        'temp': '30°C',
+        'rain': '20%'
+      },
+      {
+        'day': 'Wed',
+        'icon': MaterialCommunityIcons.weather_pouring,
+        'temp': '29°C',
+        'rain': '40%'
+      },
+      {
+        'day': 'Thu',
+        'icon': MaterialCommunityIcons.weather_cloudy,
+        'temp': '28°C',
+        'rain': '60%'
+      },
+      {
+        'day': 'Fri',
+        'icon': MaterialCommunityIcons.weather_sunny,
+        'temp': '31°C',
+        'rain': '15%'
+      },
+      {
+        'day': 'Sat',
+        'icon': MaterialCommunityIcons.weather_partly_cloudy,
+        'temp': '30°C',
+        'rain': '25%'
+      },
+      {
+        'day': 'Sun',
+        'icon': MaterialCommunityIcons.weather_rainy,
+        'temp': '27°C',
+        'rain': '50%'
+      },
     ];
+
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-      padding: EdgeInsets.all(16),
+      margin: EdgeInsets.symmetric(
+          vertical: isSmallScreen ? 8 : 10,
+          horizontal: isSmallScreen ? 12 : 16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFFe3f0ff), Color(0xFFb3c6f5)],
+        gradient: const LinearGradient(
+          colors: [Color(0xFF3949AB), Color(0xFF5C6BC0)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(isSmallScreen ? 20 : 24),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.shade100.withAlpha((0.18 * 255).toInt()),
-            blurRadius: 14,
-            offset: Offset(0, 6),
+            color: Colors.blue.shade900.withOpacity(0.2),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+            spreadRadius: 2,
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
         children: [
-          Row(
-            children: [
-              Icon(Icons.cloud, color: Colors.blue.shade400, size: 28),
-              SizedBox(width: 10),
-              Text('7-Day Weather Forecast',
-                  style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: Colors.blue.shade900,
-                      )),
-            ],
+          // Background decorative elements
+          Positioned(
+            right: -20,
+            top: -30,
+            child: Container(
+              width: isSmallScreen ? 100 : 120,
+              height: isSmallScreen ? 100 : 120,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+            ),
           ),
-          SizedBox(height: 12),
-          SizedBox(
-            height: 110,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: week.length,
-              separatorBuilder: (_, __) => SizedBox(width: 12),
-              itemBuilder: (context, i) {
-                final day = week[i];
-                return Container(
-                  width: 70,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha((0.85 * 255).toInt()),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.blue.shade100),
+          Positioned(
+            left: -40,
+            bottom: -20,
+            child: Container(
+              width: isSmallScreen ? 150 : 180,
+              height: isSmallScreen ? 150 : 180,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          // Content
+          Padding(
+            padding: EdgeInsets.all(isSmallScreen ? 16 : 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        MaterialCommunityIcons.weather_partly_cloudy,
+                        color: Colors.white,
+                        size: isSmallScreen ? 20 : 24,
+                      ),
+                    ),
+                    SizedBox(width: isSmallScreen ? 12 : 16),
+                    Expanded(
+                      child: Text(
+                        isSmallScreen
+                            ? 'Weather Forecast'
+                            : '7-Day Weather Forecast',
+                        style: theme.textTheme.titleMedium!.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                          letterSpacing: 0.3,
+                          fontSize: isSmallScreen ? 14 : null,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: isSmallScreen ? 16 : 20),
+                SizedBox(
+                  height: isSmallScreen ? 115 : 130,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: week.length,
+                    separatorBuilder: (_, __) =>
+                        SizedBox(width: isSmallScreen ? 8 : 14),
+                    itemBuilder: (context, i) {
+                      final day = week[i];
+                      final isToday = i == 0;
+
+                      return Container(
+                        width: isSmallScreen ? 55 : 70,
+                        decoration: BoxDecoration(
+                          color: isToday
+                              ? Colors.white
+                              : Colors.white.withOpacity(0.15),
+                          borderRadius:
+                              BorderRadius.circular(isSmallScreen ? 14 : 16),
+                          boxShadow: isToday
+                              ? [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        padding: EdgeInsets.symmetric(
+                            vertical: isSmallScreen ? 10 : 12,
+                            horizontal: isSmallScreen ? 2 : 4),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              day['day'] as String,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: isToday
+                                    ? Colors.blue.shade700
+                                    : Colors.white,
+                                fontSize: isSmallScreen ? 13 : 15,
+                              ),
+                            ),
+                            SizedBox(height: isSmallScreen ? 6 : 8),
+                            Icon(
+                              day['icon'] as IconData,
+                              color:
+                                  isToday ? Colors.blue.shade600 : Colors.white,
+                              size: isSmallScreen ? 24 : 28,
+                            ),
+                            SizedBox(height: isSmallScreen ? 6 : 8),
+                            Text(
+                              day['temp'] as String,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: isToday
+                                    ? Colors.blue.shade800
+                                    : Colors.white,
+                                fontSize: isSmallScreen ? 13 : 14,
+                              ),
+                            ),
+                            SizedBox(height: isSmallScreen ? 1 : 2),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: isSmallScreen ? 6 : 8,
+                                  vertical: 2),
+                              decoration: BoxDecoration(
+                                color: isToday
+                                    ? Colors.blue.shade100
+                                    : Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                day['rain'] as String,
+                                style: TextStyle(
+                                  fontSize: isSmallScreen ? 9 : 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: isToday
+                                      ? Colors.blue.shade800
+                                      : Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
-                  padding: EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(day['day'] as String,
-                          style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              color: Colors.blue.shade700,
-                              fontSize: 15)),
-                      SizedBox(height: 4),
-                      Icon(day['icon'] as IconData,
-                          color: Colors.blue.shade400, size: 26),
-                      SizedBox(height: 4),
-                      Text(day['temp'] as String,
-                          style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: Colors.blue.shade900,
-                              fontSize: 14)),
-                      Text(day['rain'] as String,
-                          style: TextStyle(
-                              fontSize: 11, color: Colors.blue.shade400)),
-                    ],
-                  ),
-                );
-              },
+                ),
+              ],
             ),
           ),
         ],
@@ -1463,61 +1836,225 @@ class NewsCarousel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, String>> news = [
+    final theme = Theme.of(context);
+    final isSmallScreen = MediaQuery.of(context).size.width < 360;
+
+    final List<Map<String, dynamic>> news = [
       {
         'title': 'Govt launches new crop insurance scheme',
         'summary':
-            'Farmers to benefit from improved coverage and faster claims.'
+            'Farmers to benefit from improved coverage and faster claims.',
+        'icon': MaterialCommunityIcons.shield_check_outline,
+        'color': Colors.green,
+        'time': '2h ago',
       },
       {
         'title': 'Market prices surge for cotton',
-        'summary': 'Cotton prices hit a 3-year high amid global demand.'
+        'summary': 'Cotton prices hit a 3-year high amid global demand.',
+        'icon': MaterialCommunityIcons.trending_up,
+        'color': Colors.orange,
+        'time': '4h ago',
       },
       {
         'title': 'Pest alert: Armyworm in Maharashtra',
-        'summary': 'Farmers advised to monitor crops and report outbreaks.'
+        'summary': 'Farmers advised to monitor crops and report outbreaks.',
+        'icon': MaterialCommunityIcons.alert_circle_outline,
+        'color': Colors.red,
+        'time': '6h ago',
       },
     ];
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFb3c6f5), Color(0xFFe3f0ff)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.blue.shade100.withOpacity(0.18),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: CarouselSlider(
-          options: CarouselOptions(
-            height: 90,
-            autoPlay: true,
-            enlargeCenterPage: true,
-            viewportFraction: 0.92,
-            autoPlayInterval: const Duration(seconds: 4),
-          ),
-          items: news.map((item) {
-            return Builder(
-              builder: (context) => ListTile(
-                leading:
-                    Icon(Icons.article, color: Colors.blue.shade700, size: 32),
-                title: Text(item['title']!,
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text(item['summary']!),
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          child: Row(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.amber.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.all(8),
+                child: Icon(
+                  MaterialCommunityIcons.newspaper_variant_outline,
+                  color: Colors.amber.shade700,
+                  size: isSmallScreen ? 18 : 20,
+                ),
               ),
-            );
-          }).toList(),
+              SizedBox(width: isSmallScreen ? 8 : 12),
+              Text(
+                tr('latest_news'),
+                style: theme.textTheme.titleMedium!.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: theme.textTheme.titleMedium!.color,
+                  letterSpacing: 0.2,
+                  fontSize: isSmallScreen ? 14 : null,
+                ),
+              ),
+              const Spacer(),
+              if (isSmallScreen)
+                IconButton(
+                  onPressed: () {
+                    // View all news
+                  },
+                  icon: Icon(
+                    MaterialCommunityIcons.chevron_right,
+                    color: theme.colorScheme.primary,
+                    size: 20,
+                  ),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                )
+              else
+                TextButton(
+                  onPressed: () {
+                    // View all news
+                  },
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    tr('view_all'),
+                    style: TextStyle(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
-      ),
+        SizedBox(
+          height: isSmallScreen ? 250 : 220, // Responsive height
+          child: CarouselSlider(
+            options: CarouselOptions(
+              viewportFraction: isSmallScreen ? 0.95 : 0.92,
+              enlargeCenterPage: true,
+              autoPlay: true,
+              aspectRatio: isSmallScreen ? 1.8 : 2.0,
+              autoPlayAnimationDuration: const Duration(milliseconds: 800),
+              autoPlayInterval: const Duration(seconds: 5),
+            ),
+            items: news.map((item) {
+              return Builder(
+                builder: (context) => Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    color: theme.cardTheme.color,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        right: -15,
+                        bottom: -15,
+                        child: Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            color: (item['color'] as Color).withOpacity(0.07),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: (item['color'] as Color)
+                                        .withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                    item['icon'] as IconData,
+                                    color: item['color'] as Color,
+                                    size: isSmallScreen ? 20 : 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  item['time'] as String,
+                                  style: TextStyle(
+                                    color: theme.colorScheme.secondary,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: isSmallScreen ? 11 : 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+                            Text(
+                              item['title'] as String,
+                              style: theme.textTheme.titleMedium!.copyWith(
+                                fontWeight: FontWeight.w700,
+                                fontSize: isSmallScreen ? 15 : null,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              item['summary'] as String,
+                              style: theme.textTheme.bodyMedium!.copyWith(
+                                color: theme.textTheme.bodySmall!.color,
+                                fontSize: isSmallScreen ? 13 : null,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const Spacer(),
+                            Align(
+                              alignment: Alignment.bottomRight,
+                              child: TextButton(
+                                onPressed: () {
+                                  // Read more
+                                },
+                                style: TextButton.styleFrom(
+                                  minimumSize: Size.zero,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 6),
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: Text(
+                                  tr('read_more'),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: isSmallScreen ? 12 : 13,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -2408,46 +2945,74 @@ class _QuickAction extends StatelessWidget {
   final IconData icon;
   final String labelKey;
   final Widget Function() routeBuilder;
-  const _QuickAction(
-      {required this.icon, required this.labelKey, required this.routeBuilder});
+  final Color color;
+
+  const _QuickAction({
+    required this.icon,
+    required this.labelKey,
+    required this.routeBuilder,
+    this.color = Colors.green,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(18),
+    // Get screen width to make responsive adjustments
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // Adjust sizes based on screen width
+    final itemWidth = screenWidth < 360 ? 90.0 : 110.0;
+    final iconSize = screenWidth < 360 ? 22.0 : 26.0;
+    final fontSize = screenWidth < 360 ? 11.0 : 12.0;
+
+    return GestureDetector(
       onTap: () => Navigator.of(context)
           .push(MaterialPageRoute(builder: (_) => routeBuilder())),
       child: Container(
-        constraints: const BoxConstraints(minWidth: 90, maxWidth: 120),
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
+        width: itemWidth,
+        margin: const EdgeInsets.only(right: 16),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.green.shade50, Colors.green.shade100],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Colors.green.shade100),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(
-                color: Colors.green.shade100.withOpacity(0.13),
-                blurRadius: 8,
-                offset: const Offset(0, 2))
+              color: color.withOpacity(0.15),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            )
           ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 32, color: Colors.green.shade700),
-            const SizedBox(height: 8),
-            Text(
-              labelKey,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.green.shade900,
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
+            Container(
+              height: screenWidth < 360 ? 40 : 50,
+              width: screenWidth < 360 ? 40 : 50,
+              margin: EdgeInsets.only(
+                  top: screenWidth < 360 ? 8 : 12,
+                  bottom: screenWidth < 360 ? 4 : 8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: iconSize, color: color),
+            ),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                    horizontal: screenWidth < 360 ? 4 : 8,
+                    vertical: screenWidth < 360 ? 4 : 8),
+                child: Text(
+                  labelKey,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.black87,
+                    fontWeight: FontWeight.w600,
+                    fontSize: fontSize,
+                  ),
+                ),
               ),
             ),
           ],
